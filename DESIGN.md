@@ -25,8 +25,8 @@ The palette is dominated by a deep, vibrating red, punctuated by "Vantablack" le
 ## 3. Typography
 Typography is the primary architecture of this system. We use a "Wide vs. Clinical" hierarchy.
 
-*   **Display & Headlines (Space Grotesk):** These must be used aggressively. `display-lg` (3.5rem) should be set with tight letter-spacing (-0.05em) to create a "wall of text" effect. This is our "aggressive" voice.
-*   **Body & UI (Work Sans):** Used for gameplay instructions and data. It provides the "Clinical" counter-balance to the chaos.
+*   **Display & Headlines (Archivo Black):** These must be used aggressively. `display-lg` (3.5rem) should be set with tight letter-spacing (-0.05em) to create a "wall of text" effect. This is our "aggressive" voice.
+*   **Body & UI (Inter):** Used for gameplay instructions and data. It provides the "Clinical" counter-balance to the chaos.
 *   **Hierarchy as Identity:** 
     *   **Captions:** Use `label-sm` in all-caps with +0.1em letter spacing.
     *   **Contrast:** Never place medium-sized text near large-sized text. Use extreme jumps (e.g., a `display-lg` title immediately followed by `body-sm` metadata) to create a signature editorial look.

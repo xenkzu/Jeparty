@@ -7,7 +7,7 @@ interface TitleProps {
 }
 
 const Title: React.FC<TitleProps> = ({ children, className = '', as: Component = 'h1' }) => {
-  // Using Space Grotesk (font-display) with aggressive tracking and sizing
+  // Using Archivo Black (font-display) with aggressive tracking and sizing
   return (
     <Component className={`font-display text-display-lg font-bold text-on-surface uppercase ${className}`}>
       {children}

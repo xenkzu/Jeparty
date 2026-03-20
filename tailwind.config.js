@@ -22,8 +22,8 @@ export default {
         error: '#FF6E84',
       },
       fontFamily: {
-        display: ['Space Grotesk', 'sans-serif'],
-        body: ['Work Sans', 'sans-serif'],
+        display: ['Archivo Black', 'sans-serif'],
+        body: ['Inter', 'sans-serif'],
       },
       fontSize: {
         'display-lg': ['3.5rem', { lineHeight: '1', letterSpacing: '-0.05em' }],
