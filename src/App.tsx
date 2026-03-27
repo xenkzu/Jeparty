@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Setup from './screens/Setup/Setup';
 import GameBoard from './screens/GameBoard/GameBoard';
 import QuestionModal from './screens/QuestionModal/QuestionModal';
@@ -20,6 +20,46 @@ function App() {
   const navigateTo = (screen: Screen) => {
     setCurrentScreen(screen);
   };
+
+  // Dev shortcut: Skip setup if screen parameter is in URL
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      const params = new URLSearchParams(window.location.search);
+      const screen = params.get('screen');
+
+      // Use check for screen presence so we only initialize if specifically asked
+      if (['question', 'game', 'winner'].includes(screen || '')) {
+        console.warn(`[DEV] Jumping directly to: ${screen}`);
+        
+        const dummyPlayers = [
+          { id: 'dev-1', name: 'DEV_ALPHA', score: 1400 },
+          { id: 'dev-2', name: 'DEV_BETA', score: 850 },
+          { id: 'dev-3', name: 'DEV_GAMMA', score: 2100 }
+        ];
+
+        const dummyGame: Game = {
+          players: dummyPlayers,
+          categories: ['HISTORY', 'SCIENCE', 'TECH', 'FILM', 'POP'],
+          board: [
+            { 
+              category: 'HISTORY', 
+              questions: [{ value: 100, question: 'Dummy?', answer: 'Dummy!', status: 'hidden' }] 
+            },
+            // ...Simplified for dev board display
+            ...Array(4).fill({ category: 'DATA', questions: [{ value: 100, question: '?', answer: '!', status: 'hidden' }] })
+          ],
+          scoringMode: 'normal',
+          turnIndex: 0,
+          currentQuestion: screen === 'question' ? { categoryIndex: 0, questionIndex: 0 } : null
+        };
+
+        setGameState(dummyGame);
+        if (screen === 'question') navigateTo('QUESTION');
+        else if (screen === 'game') navigateTo('GAME');
+        else if (screen === 'winner') navigateTo('END');
+      }
+    }
+  }, []);
 
   /**
    * Logic Wiring: Handle game initialization via AI service.
@@ -159,7 +199,8 @@ function App() {
           />
         );
       case 'END':
-        return <EndScreen onRestart={() => navigateTo('SETUP')} />;
+        if (!gameState) return <Setup onStart={handleStart} />;
+        return <EndScreen players={gameState.players} onRestart={() => navigateTo('SETUP')} />;
       default:
         return <div>Error loading game state.</div>;
     }

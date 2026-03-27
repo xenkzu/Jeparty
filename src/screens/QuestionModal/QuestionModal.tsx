@@ -34,88 +34,99 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   };
 
   const STYLES = {
-    modalJagged: { clipPath: 'polygon(1% 0%, 100% 2%, 99% 98%, 0% 100%)' },
-    buttonJagged: { clipPath: 'polygon(0% 0%, 95% 0%, 100% 100%, 5% 100%)' },
+    revealShard: { clipPath: 'polygon(0 0, 100% 0, 85% 100%, 0 100%)' },
+    statusBar: { background: 'rgba(255, 255, 255, 0.03)' }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div 
-        style={STYLES.modalJagged}
-        className="bg-[#0e0e0e] border-2 border-[var(--color-primary-dim)] w-full max-w-4xl p-8 md:p-12 relative overflow-hidden"
-      >
-        {/* Header: Value & Category */}
-        <div className="flex justify-between items-start mb-12">
-          <div className="bg-[var(--color-primary-dim)] text-black font-display font-bold text-4xl md:text-6xl px-6 py-2 italic tracking-tighter">
-            ${val}
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#080808] text-white">
+      {/* 1. Global Navigation Bar */}
+      <nav className="h-16 flex items-center justify-between px-8 border-b border-white/5 bg-black/40">
+        <div className="flex items-center gap-12">
+          <span className="font-display font-black text-2xl text-[var(--color-primary-dim)] italic tracking-tighter">JEPARTY</span>
+          <div className="hidden md:flex gap-10">
+            {['ARENA', 'STAKES', 'LEGENDS'].map(item => (
+              <span key={item} className={`font-display font-bold text-[10px] tracking-[0.2em] cursor-default ${item === 'STAKES' ? 'text-white border-b-2 border-[var(--color-primary-dim)] pb-1' : 'text-white/40'}`}>
+                {item}
+              </span>
+            ))}
           </div>
-          <button 
-            onClick={onClose}
-            className="text-[var(--color-outline)] hover:text-white transition-colors"
-          >
-            <span className="material-symbols-outlined text-4xl">close</span>
+        </div>
+        <div className="flex items-center gap-6">
+          <button onClick={onClose} className="text-white/40 hover:text-white flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm">settings</span>
+            <span className="font-display font-bold text-[10px] uppercase tracking-widest bg-[var(--color-primary-dim)] text-black px-3 py-1">NEW GAME</span>
           </button>
         </div>
+      </nav>
 
-        {/* Question Text */}
-        <div className="mb-16">
-          <h2 className="text-[var(--color-outline)] font-display font-bold text-xs tracking-[0.3em] uppercase mb-4">INCOMING_DATA_STREAM</h2>
-          <p className="font-display font-bold text-3xl md:text-5xl text-white leading-tight tracking-tighter italic uppercase">
-            {question.question}
-          </p>
+      {/* 2. Content Header (Category & Value) */}
+      <header className="px-12 py-10 flex justify-between items-end">
+        <div className="bg-[var(--color-primary-dim)] text-black px-6 py-2">
+          <span className="font-display font-black text-sm tracking-tighter uppercase italic">CATEGORY: {question.status === 'answered' ? 'LOCKED_SECTOR' : 'UNKNOWN_INTEL'}</span>
+        </div>
+        <div className="font-display font-black text-6xl text-white/10 uppercase tracking-tighter italic scale-y-110 origin-bottom">
+          VALUE: {val}
+        </div>
+      </header>
+
+      {/* 3. Main Stage (Question Display) */}
+      <main className="flex-1 flex flex-col justify-center px-12 md:px-24 max-w-7xl">
+        <div className="space-y-4">
+          <h2 className="font-display font-black text-5xl md:text-7xl lg:text-8xl leading-[0.9] tracking-tighter uppercase italic">
+            {/* Logic: Highlight words in the question (simple heuristic: first word if it looks like a subject, or just display raw) */}
+            {question.question.split(' ').map((word, i) => (
+              <span key={i} className={i === 1 ? 'text-[var(--color-primary-dim)]' : 'text-white'}>
+                {word}{' '}
+              </span>
+            ))}
+          </h2>
         </div>
 
-        {/* Answer Selection / Reveal */}
-        {!revealed ? (
-          <div className="flex justify-center">
+        {/* Action Layer */}
+        <div className="mt-20 flex items-center gap-12">
+          {!revealed ? (
             <button 
               onClick={() => setRevealed(true)}
-              style={STYLES.buttonJagged}
-              className="bg-white text-black font-display font-bold text-2xl px-12 py-6 hover:bg-[var(--color-primary-dim)] hover:text-white transition-all active:scale-95 uppercase tracking-tighter italic"
+              style={STYLES.revealShard}
+              className="bg-[var(--color-primary-dim)] text-black font-display font-black text-3xl px-16 py-6 hover:translate-x-1 transition-transform uppercase italic tracking-tighter"
             >
-              REVEAL_ANSWER
+              REVEAL ANSWER
             </button>
-          </div>
-        ) : (
-          <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-300">
-            {/* Answer Display */}
-            <div className="bg-[var(--color-surface-container-high)] p-8 border-l-4 border-[var(--color-primary-dim)]">
-              <h3 className="text-[var(--color-primary-dim)] font-display font-bold text-xs tracking-[0.3em] uppercase mb-2">VERIFIED_RESPONSE</h3>
-              <p className="font-display font-bold text-4xl text-white tracking-tighter italic uppercase">
-                {question.answer}
-              </p>
+          ) : (
+            <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-left-4 duration-300">
+              <div className="bg-white/5 border-l-4 border-[var(--color-primary-dim)] p-8">
+                <p className="font-display font-black text-4xl text-[var(--color-primary-dim)] italic tracking-tighter uppercase">
+                  {question.answer}
+                </p>
+              </div>
+              <div className="flex items-center gap-10">
+                <button onClick={onWrong} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-[var(--color-error)] uppercase underline underline-offset-8 decoration-2 hover:decoration-[var(--color-error)]">WRONG ({previews.wrong})</button>
+                <button onClick={onCorrect} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-green-500 uppercase underline underline-offset-8 decoration-2 hover:decoration-green-500">CORRECT (+{previews.correct})</button>
+                <button onClick={onPass} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-white uppercase underline underline-offset-8 decoration-2 hover:decoration-white">PASS ({previews.pass})</button>
+              </div>
             </div>
+          )}
+        </div>
+      </main>
 
-            {/* Score Previews & Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button 
-                onClick={onCorrect}
-                className="group flex flex-col items-center bg-[var(--color-surface-container-low)] hover:bg-green-600/20 border border-green-600/30 p-4 transition-all"
-              >
-                <div className="text-green-500 font-display font-bold text-2xl mb-1 uppercase tracking-tight italic">CORRECT</div>
-                <div className="text-green-500/60 font-display font-bold text-lg">+{previews.correct} PTS</div>
-                {isLowest && <div className="text-[7px] text-green-400 font-bold tracking-widest mt-1">1.5X_UNDERDOG_BONUS</div>}
-              </button>
-
-              <button 
-                onClick={onWrong}
-                className="group flex flex-col items-center bg-[var(--color-surface-container-low)] hover:bg-red-600/20 border border-red-600/30 p-4 transition-all"
-              >
-                <div className="text-red-500 font-display font-bold text-2xl mb-1 uppercase tracking-tight italic">WRONG</div>
-                <div className="text-red-500/60 font-display font-bold text-lg">{previews.wrong} PTS</div>
-              </button>
-
-              <button 
-                onClick={onPass}
-                className="group flex flex-col items-center bg-[var(--color-surface-container-low)] hover:bg-gray-600/20 border border-gray-600/30 p-4 transition-all"
-              >
-                <div className="text-gray-400 font-display font-bold text-2xl mb-1 uppercase tracking-tight italic">PASS</div>
-                <div className="text-gray-400/60 font-display font-bold text-lg">{previews.pass} PTS</div>
-              </button>
-            </div>
+      {/* 4. Bottom Status Bar */}
+      <footer style={STYLES.statusBar} className="h-20 flex items-center justify-between px-12 border-t border-white/5">
+        <div className="flex gap-16">
+          <div className="flex flex-col">
+            <span className="text-[var(--color-outline)] font-display font-bold text-[8px] tracking-widest uppercase mb-1">TIME REMAINING</span>
+            <span className="text-[var(--color-primary-dim)] font-display font-black text-xl italic tracking-tighter">14.02s</span>
           </div>
-        )}
-      </div>
+          <div className="flex flex-col">
+            <span className="text-[var(--color-outline)] font-display font-bold text-[8px] tracking-widest uppercase mb-1">STAKE POOL</span>
+            <span className="font-display font-black text-xl italic tracking-tighter">$ {activePlayer.score.toLocaleString()}</span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end">
+          <span className="text-[var(--color-outline)] font-display font-bold text-[8px] tracking-widest uppercase mb-1">MULTIPLIER</span>
+          <span className="text-white/40 font-display font-black text-xl italic tracking-tighter">x{multiplier.toFixed(1)}</span>
+        </div>
+      </footer>
     </div>
   );
 };

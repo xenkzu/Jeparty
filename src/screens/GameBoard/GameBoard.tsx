@@ -19,39 +19,41 @@ const GameBoard: React.FC<GameBoardProps> = ({ game, onSelectQuestion, onEndGame
   };
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-[var(--color-background)] text-[var(--color-on-surface)] font-body p-6">
+    <div className="min-h-screen flex flex-col bg-[var(--color-background)] text-[var(--color-on-surface)] font-body p-6 overflow-y-auto">
       
-      {/* 1. Scoreboard Bar (Compact version) */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 shrink-0 h-32">
+      {/* 1. Scoreboard Bar (Auto-scaling columns 2-4) */}
+      <section 
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12 shrink-0"
+      >
         {game.players.map((player, idx) => {
           const isActive = idx === game.turnIndex;
           return (
             <div 
               key={player.id}
               style={idx === 0 ? STYLES.shardedRight : {}}
-              className={`p-3 flex flex-col justify-between relative ${
+              className={`p-5 flex flex-col justify-between relative transition-all duration-300 ${
                 isActive 
-                  ? 'bg-[var(--color-primary-dim)] text-[var(--color-on-primary-fixed)]' 
+                  ? 'bg-[var(--color-primary-dim)] text-[var(--color-on-primary-fixed)] scale-102 z-10' 
                   : 'bg-[var(--color-surface-container-high)] border-l-4 border-[var(--color-primary-dim)]'
               }`}
             >
               {isActive && (
-                <div className="absolute top-1 right-3 font-display font-bold text-black opacity-10 text-3xl italic">{String(idx + 1).padStart(2, '0')}</div>
+                <div className="absolute top-1 right-3 font-display font-bold text-black opacity-10 text-4xl italic">{String(idx + 1).padStart(2, '0')}</div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
                   {isActive ? 'stars' : 'person'}
                 </span>
-                <span className="font-display font-bold text-lg tracking-tighter uppercase italic">
+                <span className="font-display font-bold text-xl tracking-tighter uppercase italic truncate">
                   {player.name}
                 </span>
               </div>
-              <div className="text-2xl font-display font-bold tracking-tighter italic">
+              <div className="text-3xl font-display font-bold tracking-tighter italic">
                 {player.score.toLocaleString()} <span className="text-[10px] uppercase">pts</span>
               </div>
               {isActive && (
-                <div className="text-[9px] text-black font-bold font-display uppercase tracking-widest leading-none">
-                  CURRENT TURN
+                <div className="text-[10px] text-black font-black font-display uppercase tracking-widest leading-none mt-2">
+                  ACTIVE_MODERATOR
                 </div>
               )}
             </div>
@@ -59,8 +61,8 @@ const GameBoard: React.FC<GameBoardProps> = ({ game, onSelectQuestion, onEndGame
         })}
       </section>
 
-      {/* 2. Game Board Grid (Filling remaining space with flex-1 + grid-rows-6) */}
-      <div className="flex-1 grid grid-cols-5 grid-rows-6 gap-2 min-h-0">
+      {/* 2. Game Board Grid (Fixed margin and flexible allocation) */}
+      <div className="grid grid-cols-5 gap-3" style={{ gridTemplateRows: 'repeat(6, minmax(100px, 1fr))' }}>
         {/* Category Headers */}
         {categories.map((cat, i) => (
           <div 
