@@ -123,7 +123,8 @@ function App() {
             ...gameState,
             players: newPlayers,
             board: newBoard,
-            currentQuestion: null
+            currentQuestion: null,
+            turnIndex: (gameState.turnIndex + 1) % gameState.players.length
           });
           navigateTo('GAME');
         };
