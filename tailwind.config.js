@@ -7,41 +7,78 @@ export default {
   theme: {
     extend: {
       colors: {
-        surface: '#270000',
-        'surface-container-lowest': '#000000',
-        'surface-container-low': '#380000',
-        'surface-container-high': '#490000',
-        'surface-container-highest': '#5A0000',
-        'surface-bright': '#600000',
-        tertiary: '#FF725E',
-        'tertiary-container': '#FE0000',
-        'on-tertiary-container': '#000000',
-        primary: '#FFFFFF',
-        'on-surface': '#FFFFFF',
-        'outline-variant': '#950100',
-        error: '#FF6E84',
+        background: 'var(--color-background)',
+        'on-background': 'var(--color-on-background)',
+        surface: 'var(--color-surface)',
+        'on-surface': 'var(--color-on-surface)',
+        'surface-bright': 'var(--color-surface-bright)',
+        'surface-dim': 'var(--color-surface-dim)',
+        'surface-variant': 'var(--color-surface-variant)',
+        'on-surface-variant': 'var(--color-on-surface-variant)',
+        'surface-container-lowest': 'var(--color-surface-container-lowest)',
+        'surface-container-low': 'var(--color-surface-container-low)',
+        'surface-container': 'var(--color-surface-container)',
+        'surface-container-high': 'var(--color-surface-container-high)',
+        'surface-container-highest': 'var(--color-surface-container-highest)',
+        
+        primary: {
+          DEFAULT: 'var(--color-primary)',
+          container: 'var(--color-primary-container)',
+          dim: 'var(--color-primary-dim)',
+        },
+        'on-primary': {
+          DEFAULT: 'var(--color-on-primary)',
+          container: 'var(--color-on-primary-container)',
+        },
+        
+        secondary: {
+          DEFAULT: 'var(--color-secondary)',
+          container: 'var(--color-secondary-container)',
+        },
+        'on-secondary': {
+          DEFAULT: 'var(--color-on-secondary)',
+          container: 'var(--color-on-secondary-container)',
+        },
+        
+        tertiary: {
+          DEFAULT: 'var(--color-tertiary)',
+          container: 'var(--color-tertiary-container)',
+        },
+        'on-tertiary': {
+          DEFAULT: 'var(--color-on-tertiary)',
+          container: 'var(--color-on-tertiary-container)',
+        },
+        
+        error: {
+          DEFAULT: 'var(--color-error)',
+          container: 'var(--color-error-container)',
+        },
+        'on-error': {
+          DEFAULT: 'var(--color-on-error)',
+          container: 'var(--color-on-error-container)',
+        },
+        
+        outline: {
+          DEFAULT: 'var(--color-outline)',
+          variant: 'var(--color-outline-variant)',
+        },
       },
       fontFamily: {
-        display: ['Archivo Black', 'sans-serif'],
-        body: ['Inter', 'sans-serif'],
-      },
-      fontSize: {
-        'display-lg': ['3.5rem', { lineHeight: '1', letterSpacing: '-0.05em' }],
-        'label-sm': ['0.875rem', { letterSpacing: '0.1em' }],
+        display: ['var(--font-display)'],
+        body: ['var(--font-body)'],
       },
       boxShadow: {
-        'ambient': '0 0 64px rgba(255, 255, 255, 0.08)',
+        'ambient': 'var(--shadow-ambient)',
         'hard': '4px 4px 0 0 var(--tw-shadow-color)',
       },
+      borderRadius: {
+        'none': 'var(--border-radius-none)',
+      },
       spacing: {
-        '8': '1.75rem',
-        '24': '5.5rem',
-      },
-      backgroundImage: {
-        'gradient-lithographic': 'linear-gradient(135deg, var(--tw-gradient-stops))',
-        'gradient-radial-buzzer': 'radial-gradient(var(--tw-gradient-stops))',
-      },
+        'unit': 'var(--spacing-unit)',
+      }
     },
   },
   plugins: [],
 }
+

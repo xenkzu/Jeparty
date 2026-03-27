@@ -1,0 +1,51 @@
+:root {
+  /* Colors from Stitch Design System */
+  --color-background: #0e0e0e;
+  --color-on-background: #ffffff;
+  --color-surface: #0e0e0e;
+  --color-on-surface: #ffffff;
+  --color-surface-bright: #2c2c2c;
+  --color-surface-dim: #0e0e0e;
+  --color-surface-variant: #262626;
+  --color-on-surface-variant: #ababab;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-low: #131313;
+  --color-surface-container: #191919;
+  --color-surface-container-high: #1f1f1f;
+  --color-surface-container-highest: #262626;
+  
+  --color-primary: #ff8e7d;
+  --color-on-primary: #650000;
+  --color-primary-container: #ff7763;
+  --color-on-primary-container: #4f0000;
+  --color-primary-dim: #eb0000;
+  
+  --color-secondary: #e2e2e2;
+  --color-on-secondary: #505252;
+  --color-secondary-container: #454747;
+  --color-on-secondary-container: #d0d0d0;
+  
+  --color-tertiary: #ff725e;
+  --color-on-tertiary: #4a0000;
+  --color-tertiary-container: #fe0000;
+  --color-on-tertiary-container: #000000;
+  
+  --color-error: #ff6e84;
+  --color-on-error: #490013;
+  --color-error-container: #a70138;
+  --color-on-error-container: #ffb2b9;
+  
+  --color-outline: #757575;
+  --color-outline-variant: #484848;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Spacing & Borders */
+  --spacing-unit: 8px;
+  --border-radius-none: 0px;
+
+  /* Shadows */
+  --shadow-ambient: 0 40px 60px 0 rgba(235, 0, 0, 0.06);
+}
