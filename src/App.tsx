@@ -12,6 +12,9 @@ function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('SETUP');
   const [prevScreen, setPrevScreen] = useState<Screen | null>(null);
   const [gameState, setGameState] = useState<Game | null>(null);
+  // Log game state to console when initialized to resolve unused warning while in development
+  if (gameState) console.debug("GAME_STREAM_INITIALIZED:", gameState.players.length, "players active");
+
   const [isLoading, setIsLoading] = useState(false);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
