@@ -3,7 +3,7 @@ export interface Game {
   categories: string[];
   board: Board;
   scoringMode: ScoringMode;
-  currentPlayerIndex: number;
+  turnIndex: number;
   currentQuestion: {
     categoryIndex: number;
     questionIndex: number;

@@ -41,7 +41,7 @@ function App() {
         categories,
         board,
         scoringMode,
-        currentPlayerIndex: 0,
+        turnIndex: 0,
         currentQuestion: null
       };
 
@@ -90,8 +90,19 @@ function App() {
       case 'SETUP':
         return <Setup onStart={handleStart} />;
       case 'GAME':
+        if (!gameState) return <Setup onStart={handleStart} />;
         return (
-          <GameBoard />
+          <GameBoard 
+            game={gameState}
+            onSelectQuestion={(categoryIndex, questionIndex) => {
+              setGameState({
+                ...gameState,
+                currentQuestion: { categoryIndex, questionIndex }
+              });
+              navigateTo('QUESTION');
+            }}
+            onEndGame={() => navigateTo('END')}
+          />
         );
       case 'QUESTION':
         return (

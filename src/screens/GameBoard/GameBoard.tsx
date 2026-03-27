@@ -1,12 +1,15 @@
 import React from 'react';
+import { Game } from '../../types/game';
 
-const GameBoard: React.FC = () => {
-  const categories = ["HISTORY", "SCIENCE", "POP CULTURE", "SPORTS", "TECH"];
-  const pointValues = [100, 200, 300, 400, 500];
-  const players = [
-    { name: "PLAYER_01", score: 400, isActive: true },
-    { name: "PLAYER_02", score: 150, isActive: false }
-  ];
+interface GameBoardProps {
+  game: Game;
+  onSelectQuestion: (categoryIndex: number, questionIndex: number) => void;
+  onEndGame: () => void;
+}
+
+const GameBoard: React.FC<GameBoardProps> = ({ game, onSelectQuestion, onEndGame }) => {
+  const categories = game.board.map(b => b.category);
+  const activePlayer = game.players[game.turnIndex];
 
   // Clip-path polygon styles derived from Stitch design
   const STYLES = {
@@ -20,37 +23,40 @@ const GameBoard: React.FC = () => {
       
       {/* 1. Scoreboard Bar (Compact version) */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 shrink-0 h-32">
-        {players.map((player, idx) => (
-          <div 
-            key={player.name}
-            style={idx === 0 ? STYLES.shardedRight : {}}
-            className={`p-3 flex flex-col justify-between relative ${
-              player.isActive 
-                ? 'bg-[var(--color-primary-dim)] text-[var(--color-on-primary-fixed)]' 
-                : 'bg-[var(--color-surface-container-high)] border-l-4 border-[var(--color-primary-dim)]'
-            }`}
-          >
-            {player.isActive && (
-              <div className="absolute top-1 right-3 font-display font-bold text-black opacity-10 text-3xl italic">01</div>
-            )}
-            <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: player.isActive ? "'FILL' 1" : "'FILL' 0" }}>
-                {player.isActive ? 'stars' : 'person'}
-              </span>
-              <span className="font-display font-bold text-lg tracking-tighter uppercase italic">
-                {player.name}
-              </span>
-            </div>
-            <div className="text-2xl font-display font-bold tracking-tighter italic">
-              {player.score.toLocaleString()} <span className="text-[10px] uppercase">pts</span>
-            </div>
-            {player.isActive && (
-              <div className="text-[9px] text-black font-bold font-display uppercase tracking-widest leading-none">
-                CURRENT TURN
+        {game.players.map((player, idx) => {
+          const isActive = idx === game.turnIndex;
+          return (
+            <div 
+              key={player.id}
+              style={idx === 0 ? STYLES.shardedRight : {}}
+              className={`p-3 flex flex-col justify-between relative ${
+                isActive 
+                  ? 'bg-[var(--color-primary-dim)] text-[var(--color-on-primary-fixed)]' 
+                  : 'bg-[var(--color-surface-container-high)] border-l-4 border-[var(--color-primary-dim)]'
+              }`}
+            >
+              {isActive && (
+                <div className="absolute top-1 right-3 font-display font-bold text-black opacity-10 text-3xl italic">{String(idx + 1).padStart(2, '0')}</div>
+              )}
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0" }}>
+                  {isActive ? 'stars' : 'person'}
+                </span>
+                <span className="font-display font-bold text-lg tracking-tighter uppercase italic">
+                  {player.name}
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+              <div className="text-2xl font-display font-bold tracking-tighter italic">
+                {player.score.toLocaleString()} <span className="text-[10px] uppercase">pts</span>
+              </div>
+              {isActive && (
+                <div className="text-[9px] text-black font-bold font-display uppercase tracking-widest leading-none">
+                  CURRENT TURN
+                </div>
+              )}
+            </div>
+          );
+        })}
       </section>
 
       {/* 2. Game Board Grid (Filling remaining space with flex-1 + grid-rows-6) */}
@@ -68,21 +74,22 @@ const GameBoard: React.FC = () => {
           </div>
         ))}
 
-        {/* Board Rows for 100 - 500 */}
-        {pointValues.map((val, rowIdx) => (
-          <React.Fragment key={val}>
-            {categories.map((_, colIdx) => {
-              const totalIdx = rowIdx * 5 + colIdx;
-              const isUsed = totalIdx === 1 || totalIdx === 6; // Dummies for used tiles
+        {/* Board Rows */}
+        {game.board[0].questions.map((_, rowIdx) => (
+          <React.Fragment key={rowIdx}>
+            {game.board.map((category, colIdx) => {
+              const question = category.questions[rowIdx];
+              const totalIdx = rowIdx * game.board.length + colIdx;
+              const isAnswered = question.status === 'answered';
               
-              if (isUsed) {
+              if (isAnswered) {
                 return (
                   <div 
-                    key={`${val}-${colIdx}`} 
+                    key={`${colIdx}-${rowIdx}`} 
                     style={totalIdx % 2 === 0 ? STYLES.cellJagged : STYLES.cellJaggedAlt}
                     className="h-full bg-[var(--color-surface-container-lowest)] flex flex-col items-center justify-center relative opacity-30 grayscale pointer-events-none"
                   >
-                    <span className="font-display font-bold text-2xl md:text-4xl text-[var(--color-outline)] tracking-tighter line-through italic">{val}</span>
+                    <span className="font-display font-bold text-2xl md:text-4xl text-[var(--color-outline)] tracking-tighter line-through italic">{question.value}</span>
                     <span className="absolute rotate-12 text-[7px] font-bold font-display text-red-600 bg-black px-1 uppercase">USED</span>
                   </div>
                 );
@@ -90,12 +97,13 @@ const GameBoard: React.FC = () => {
 
               return (
                 <div 
-                  key={`${val}-${colIdx}`} 
+                  key={`${colIdx}-${rowIdx}`} 
+                  onClick={() => question.status === 'hidden' && onSelectQuestion(colIdx, rowIdx)}
                   style={totalIdx % 2 === 0 ? STYLES.cellJagged : STYLES.cellJaggedAlt}
                   className="h-full bg-[var(--color-surface-container-low)] hover:bg-[var(--color-primary-dim)] group cursor-pointer flex flex-col items-center justify-center relative overflow-hidden transition-all duration-75 active:scale-95"
                 >
                   <span className="font-display font-bold text-2xl md:text-4xl text-[var(--color-primary-dim)] group-hover:text-black tracking-tighter transition-colors italic">
-                    {val}
+                    {question.value}
                   </span>
                 </div>
               );
@@ -111,11 +119,16 @@ const GameBoard: React.FC = () => {
           <div 
             className="text-[var(--color-primary-dim)] font-bold font-display tracking-widest text-[9px] bg-[var(--color-surface-container-high)] px-3 py-1 border-l-2 border-[var(--color-primary-dim)] line-clamp-1"
           >
-            SYSTEM_STABLE: AWAITING_INPUT_STREAM_...
+            ACTIVE_PLAYER: {activePlayer.name.toUpperCase()}
           </div>
         </div>
         <div className="flex items-center gap-4 shrink-0 ml-4">
-          <div className="text-[8px] text-[var(--color-outline)] font-bold font-display tracking-[0.2em] uppercase hidden sm:block">SYSTEM_STABLE</div>
+          <button 
+            onClick={onEndGame}
+            className="text-[8px] text-[var(--color-outline)] hover:text-white font-bold font-display tracking-[0.2em] uppercase transition-colors"
+          >
+            TERMINATE_GAME
+          </button>
           <div className="flex gap-1">
             <div className="w-8 h-0.5 bg-[var(--color-primary-dim)]"></div>
             <div className="w-8 h-0.5 bg-[var(--color-surface-container-highest)]"></div>
@@ -123,7 +136,6 @@ const GameBoard: React.FC = () => {
         </div>
       </footer>
     </div>
-
   );
 };
 
