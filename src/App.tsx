@@ -91,10 +91,7 @@ function App() {
         return <Setup onStart={handleStart} />;
       case 'GAME':
         return (
-          <GameBoard
-            onQuestionSelect={() => navigateTo('QUESTION')}
-            onEndGame={() => navigateTo('END')}
-          />
+          <GameBoard />
         );
       case 'QUESTION':
         return (
