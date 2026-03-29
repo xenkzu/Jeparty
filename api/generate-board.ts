@@ -25,19 +25,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const visualCategories = categories.filter(c => c.toLowerCase().endsWith(' -v'));
   const promptCategories = categories.map(c => c.replace(/ -v$/i, ''));
-  
+
   const prompt = `Generate a complete Jeopardy game board for these 5 categories: ${promptCategories.join(', ')}.
       Return ONLY valid JSON, no markdown, no backticks, no explanation.
       A JSON array of exactly 5 objects: { category: string, questions: [] }
       Each question object: { value: number, question: string, answer: string, status: 'hidden', searchTerm?: string }
       
       SPECIAL INSTRUCTION:
-      For [VISUAL] categories ([${visualCategories.map(c => c.replace(/ -v$/i, '')).join(', ')}]), the searchTerm field must follow these strict rules:
-       - Only generate questions about real people, historical figures, world landmarks, scientists, athletes, or politicians.
-       - These must all have Wikipedia pages with thumbnail images.
-       - searchTerm must be the exact Wikipedia page title.
-       - GOOD examples: 'Albert Einstein', 'Eiffel Tower', 'Cristiano Ronaldo', 'Nelson Mandela', 'Mount Everest', 'Leonardo da Vinci'
-       - BAD examples: anime characters, fictional objects, cartoon characters, pokemon, game characters — do NOT generate these for visual questions.
+      For [VISUAL] categories ([${visualCategories.map(c => c.replace(/ -v$/i, '')).join(', ')}]), generate questions that match the category theme exactly.
+      However, only generate questions about subjects that have a real Wikipedia page with a thumbnail image.
+
+      Rules:
+       - ALWAYS respect the category name and generate questions within that theme
+       - For anime categories: use real anime characters that have Wikipedia pages
+         GOOD: 'Naruto Uzumaki', 'Goku', 'Monkey D. Luffy', 'Light Yagami'
+       - For sports categories: use real athletes with Wikipedia pages
+         GOOD: 'Cristiano Ronaldo', 'LeBron James', 'Virat Kohli'
+       - For geography/landmarks: use real places with Wikipedia pages
+         GOOD: 'Eiffel Tower', 'Mount Everest', 'Taj Mahal'
+       - For science categories: use real scientists or discoveries with Wikipedia pages
+         GOOD: 'Albert Einstein', 'Isaac Newton', 'DNA double helix'
+       - For ANY category: pick the most famous and recognizable subjects first
+         as they are most likely to have Wikipedia thumbnail images
+       - NEVER generate questions about obscure subjects unlikely to have Wikipedia images
+       - searchTerm must be the exact Wikipedia page title for that subject
+       - imageSource stays 'wikipedia' for all visual questions
        - The answer field must match the searchTerm subject exactly.
        - The question text should be "Guess the character" or "Who is this?".
       
@@ -62,8 +74,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ 
-        error: `Groq API Error: ${errorData.error?.message || response.statusText}` 
+      return res.status(response.status).json({
+        error: `Groq API Error: ${errorData.error?.message || response.statusText}`
       });
     }
 
