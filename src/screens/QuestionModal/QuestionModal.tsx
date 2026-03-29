@@ -3,8 +3,9 @@ import { fetchVisualImage } from '../../services/imageService';
 
 interface QuestionModalProps {
   question: { value: number; question: string; answer: string; status: string; searchTerm?: string };
+  categoryName: string;
   activePlayer: { name: string; score: number };
-  lowestScoringPlayer: { name: string; score: number };
+  isUnderdog: boolean;
   scoringMode: 'normal' | 'advanced';
   onCorrect: () => void;
   onWrong: () => void;
@@ -14,8 +15,9 @@ interface QuestionModalProps {
 
 const QuestionModal: React.FC<QuestionModalProps> = ({ 
   question, 
+  categoryName,
   activePlayer, 
-  lowestScoringPlayer, 
+  isUnderdog, 
   scoringMode, 
   onCorrect, 
   onWrong, 
@@ -37,8 +39,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
     }
   }, [question.searchTerm]);
 
-  const isLowest = activePlayer.score === lowestScoringPlayer.score;
-  const multiplier = isLowest ? 1.5 : 1;
+  const multiplier = isUnderdog ? 1.5 : 1;
   const val = question.value;
 
   const previews = {
@@ -69,7 +70,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         <div className="flex items-center gap-6">
           <button onClick={onClose} className="text-white/40 hover:text-white flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">settings</span>
-            <span className="font-display font-bold text-[10px] uppercase tracking-widest bg-[var(--color-primary-dim)] text-black px-3 py-1">NEW GAME</span>
+            <span className="font-display font-bold text-[10px] uppercase tracking-widest bg-[var(--color-primary-dim)] text-black px-3 py-1">BACK TO BOARD</span>
           </button>
         </div>
       </nav>
@@ -77,7 +78,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       {/* 2. Content Header (Category & Value) */}
       <header className="px-12 py-10 shrink-0 flex justify-between items-end">
         <div className="bg-[var(--color-primary-dim)] text-black px-6 py-2">
-          <span className="font-display font-black text-sm tracking-tighter uppercase italic">CATEGORY: {question.status === 'answered' ? 'LOCKED_SECTOR' : 'UNKNOWN_INTEL'}</span>
+          <span className="font-display font-black text-sm tracking-tighter uppercase italic">CATEGORY: {categoryName}</span>
         </div>
         <div className="font-display font-black text-6xl text-white/10 uppercase tracking-tighter italic scale-y-110 origin-bottom">
           VALUE: {val}
@@ -89,11 +90,14 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         <div className="space-y-4">
           <h2 className="font-display font-black text-4xl md:text-5xl lg:text-6xl leading-[1] tracking-tighter uppercase italic animate-flicker" style={{ animationIterationCount: 2 }}>
             {/* Logic: Highlight words in the question (simple heuristic: first word if it looks like a subject, or just display raw) */}
-            {question.question.split(' ').map((word, i) => (
-              <span key={i} className={i === 1 ? 'text-[var(--color-primary-dim)]' : 'text-white'}>
-                {word}{' '}
-              </span>
-            ))}
+            {(() => {
+              const words = question.question.split(' ');
+              return words.map((word, i) => (
+                <span key={i} className={i === words.length - 1 ? 'text-[var(--color-primary-dim)]' : 'text-white'}>
+                  {word}{' '}
+                </span>
+              ));
+            })()}
           </h2>
         </div>
 

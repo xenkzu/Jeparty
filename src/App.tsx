@@ -149,8 +149,9 @@ function App() {
         const currentQuestion = gameState.board[categoryIndex].questions[questionIndex];
         const activePlayer = gameState.players[gameState.turnIndex];
         
-        // Wire lowestScoringPlayer calculation
-        const lowestScoringPlayer = gameState.players.reduce((min, p) => p.score < min.score ? p : min, gameState.players[0]);
+        // Wire underdog boost: all players tied at the minimum score get the 1.5x multiplier
+        const minScore = Math.min(...gameState.players.map(p => p.score));
+        const isUnderdog = activePlayer.score === minScore;
 
         const updateScoreAndStatus = (scoreDelta: number) => {
           const newPlayers = [...gameState.players];
@@ -178,11 +179,12 @@ function App() {
               status: currentQuestion.status,
               searchTerm: currentQuestion.searchTerm
             }}
+            categoryName={gameState.board[categoryIndex].category}
             activePlayer={activePlayer}
-            lowestScoringPlayer={lowestScoringPlayer}
+            isUnderdog={isUnderdog}
             scoringMode={gameState.scoringMode}
             onCorrect={() => {
-              const multiplier = activePlayer.score === lowestScoringPlayer.score ? 1.5 : 1;
+              const multiplier = isUnderdog ? 1.5 : 1;
               updateScoreAndStatus(currentQuestion.value * multiplier);
             }}
             onWrong={() => {
@@ -201,7 +203,12 @@ function App() {
         );
       case 'END':
         if (!gameState) return <Setup onStart={handleStart} />;
-        return <EndScreen players={gameState.players} onRestart={() => navigateTo('SETUP')} />;
+        return <EndScreen players={gameState.players} onRestart={() => {
+          setGameState(null);
+          setLoadingError(null);
+          setIsLoading(false);
+          navigateTo('SETUP');
+        }} />;
       default:
         return <div>Error loading game state.</div>;
     }
