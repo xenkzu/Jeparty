@@ -32,13 +32,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       Each question object: { value: number, question: string, answer: string, status: 'hidden', searchTerm?: string }
       
       SPECIAL INSTRUCTION:
-      For categories matching these exactly: [${visualCategories.map(c => c.replace(/ -v$/i, '')).join(', ')}], the searchTerm field must follow these strict rules:
-       - Must be the exact proper noun Wikipedia would have a page for
-       - Format: 'Firstname Lastname' for people, 'Character Name anime/show' for fictional characters
-       - GOOD examples: 'Monkey D Luffy', 'Sasuke Uchiha', 'Albert Einstein', 'Eiffel Tower'
-       - BAD examples: 'anime character', 'famous scientist', 'guess who', 'popular character'
-       - If you cannot think of a specific Wikipedia-searchable entity, pick a different question
-       - The answer field must match the searchTerm subject exactly
+      For [VISUAL] categories ([${visualCategories.map(c => c.replace(/ -v$/i, '')).join(', ')}]), the searchTerm field must follow these strict rules:
+       - Only generate questions about real people, historical figures, world landmarks, scientists, athletes, or politicians.
+       - These must all have Wikipedia pages with thumbnail images.
+       - searchTerm must be the exact Wikipedia page title.
+       - GOOD examples: 'Albert Einstein', 'Eiffel Tower', 'Cristiano Ronaldo', 'Nelson Mandela', 'Mount Everest', 'Leonardo da Vinci'
+       - BAD examples: anime characters, fictional objects, cartoon characters, pokemon, game characters — do NOT generate these for visual questions.
+       - The answer field must match the searchTerm subject exactly.
        - The question text should be "Guess the character" or "Who is this?".
       
       For all other categories, DO NOT include a searchTerm field.

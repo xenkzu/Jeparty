@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { fetchVisualImage } from '../../services/imageService';
 
 interface QuestionModalProps {
   question: { value: number; question: string; answer: string; status: string; searchTerm?: string };
@@ -28,14 +29,10 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   useEffect(() => {
     if (question.searchTerm) {
       setImageLoading(true);
-      fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(question.searchTerm)}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.thumbnail?.source) {
-            setImageUrl(data.thumbnail.source);
-          }
+      fetchVisualImage(question.searchTerm)
+        .then(url => {
+          if (url) setImageUrl(url);
         })
-        .catch(() => {})
         .finally(() => setImageLoading(false));
     }
   }, [question.searchTerm]);
