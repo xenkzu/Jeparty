@@ -2,6 +2,9 @@
   "functions": {
     "api/generate-board.ts": {
       "maxDuration": 30
+    },
+    "api/fetch-image.ts": {
+      "maxDuration": 15
     }
   }
 }
