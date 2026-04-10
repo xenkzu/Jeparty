@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Title from '../../components/ui/Title';
 import { GameSettings } from '../../types/game';
 
@@ -61,6 +61,19 @@ const CategoryInput = ({ index, value, onChange }: { index: number; value: strin
 const Setup: React.FC<SetupProps> = ({ onStart, currentSettings }) => {
   const [players, setPlayers] = useState<string[]>(['', '']);
   const [categories, setCategories] = useState<string[]>(['', '', '', '', '']);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Shortcut: Ctrl + Shift + A
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setPlayers(['DEV1', 'DEV2']);
+        setCategories(['Maths', 'Science', 'Pop Culture', 'Anime Hard -v', 'Urban Legends -v']);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const addPlayer = () => {
     if (players.length < 8) setPlayers([...players, '']);

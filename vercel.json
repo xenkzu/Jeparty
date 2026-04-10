@@ -1,4 +1,7 @@
 {
+  "framework": "vite",
+  "devCommand": "vite --port 3000",
+  "outputDirectory": "dist",
   "functions": {
     "api/generate-board.ts": {
       "maxDuration": 30
@@ -8,7 +11,13 @@
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

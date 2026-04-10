@@ -4,6 +4,7 @@ import GameBoard from './screens/GameBoard/GameBoard';
 import QuestionModal from './screens/QuestionModal/QuestionModal';
 import EndScreen from './screens/EndScreen/EndScreen';
 import { generateBoard } from './services/aiService';
+import { prefetchBoardImages } from './services/imageService';
 import { Game, GameSettings } from './types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -113,6 +114,7 @@ function App() {
       };
 
       setGameState(newGame);
+      prefetchBoardImages(board);
       navigateTo('GAME');
     } catch (error) {
       setLoadingError(error instanceof Error ? error.message : 'System initialization failed.');

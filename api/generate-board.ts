@@ -34,9 +34,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
   const pointValues = POINT_VALUES[questionsPerCategory] || POINT_VALUES[5];
 
-  const API_KEY = process.env.VITE_GROQ_API_KEY;
+  const API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
   const BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
-  const MODEL = 'qwen/qwen3-32b';
+  const MODEL = 'llama-3.3-70b-versatile';
 
   const visualCategories = categories.filter(c => c.toLowerCase().endsWith(' -v'));
   const promptCategories = categories.map(c => c.replace(/ -v$/i, ''));
@@ -87,21 +87,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
        4. Questions must NEVER be ambiguous — only one correct answer is possible
 
-      DIFFICULTY SCALING RULES — strictly follow this for every category:
-       100 points → Extremely easy, common knowledge, anyone would know this
-                    Example for 'Science': 'What planet do we live on?'
-       200 points → Easy, basic knowledge, most people would know this
-                    Example for 'Science': 'What gas do plants absorb from the air?'
-       300 points → Medium, requires some knowledge of the topic
-                    Example for 'Science': 'What is the chemical symbol for gold?'
-       400 points → Hard, requires good knowledge of the topic
-                    Example for 'Science': 'What is the speed of light in km/s?'
-       500 points → Expert level, only enthusiasts or experts would know this
-                    Example for 'Science': 'What is the half-life of Carbon-14?'
+      DIFFICULTY SCALING RULES — strictly follow for every category:
+       ${pointValues.map((v, i) => {
+         const labels = ['Extremely easy — anyone would know this', 'Easy — most people would know', 'Medium — requires some knowledge', 'Hard — requires strong knowledge', 'Expert level — enthusiasts/experts only', 'Very expert — deep niche knowledge', 'Master level — almost nobody knows this'];
+         return `${v} points → ${labels[Math.min(i, labels.length - 1)]}`;
+       }).join('\n       ')}
 
-       The difficulty jump between each tier must be noticeable.
-       NEVER put a hard question at ${pointValues[0]} or an easy question at ${pointValues[pointValues.length-1]}.
-       Generate questions in order: ${pointValues[0]} first (easiest) → ${pointValues[pointValues.length-1]} last (hardest)`;
+        The difficulty jump between each tier must be noticeable.
+        Generate questions in order: ${pointValues[0]} first (easiest) → ${pointValues[pointValues.length - 1]} last (hardest)`;
 
   try {
     const response = await fetch(BASE_URL, {
@@ -114,8 +107,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         model: MODEL,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 5000,
-        reasoning_format: "hidden"
+        max_tokens: 5000
       })
     });
 

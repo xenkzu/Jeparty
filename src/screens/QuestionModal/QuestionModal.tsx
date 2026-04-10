@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { fetchVisualImage } from '../../services/imageService';
+import { resolveImage } from '../../services/imageService';
 
 interface QuestionModalProps {
   question: { value: number; question: string; answer: string; status: string; searchTerm?: string };
@@ -34,17 +34,12 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
 
   // Image fetch
   useEffect(() => {
-    if (question.searchTerm) {
-      setImageLoading(true);
-      fetchVisualImage(question.searchTerm, categoryName)
-        .then(result => {
-          if (result?.imageUrl) {
-            console.log(`[Image] Found for "${question.searchTerm}" via ${result.source}`);
-            setImageUrl(result.imageUrl);
-          }
-        })
-        .finally(() => setImageLoading(false));
-    }
+    if (!question.searchTerm) return;
+    setImageLoading(true);
+    resolveImage(question.searchTerm).then(url => {
+      if (url) setImageUrl(url);
+      setImageLoading(false);
+    });
   }, [question.searchTerm]);
 
   // Countdown timer

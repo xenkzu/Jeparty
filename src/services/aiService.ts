@@ -2,7 +2,7 @@ import { Board, GameSettings } from '../types/game';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'qwen/qwen3-32b';
+const MODEL = 'llama-3.3-70b-versatile';
 
 // Point values by questionsPerCategory
 const POINT_VALUES: Record<number, number[]> = {
@@ -71,9 +71,9 @@ function buildPrompt(categories: string[], settings: GameSettings): string {
 
       DIFFICULTY SCALING RULES — strictly follow for every category:
        ${pointValues.map((v, i) => {
-         const labels = ['Extremely easy — anyone would know this', 'Easy — most people would know', 'Medium — requires some knowledge', 'Hard — requires strong knowledge', 'Expert level — enthusiasts/experts only', 'Very expert — deep niche knowledge', 'Master level — almost nobody knows this'];
-         return `${v} points → ${labels[Math.min(i, labels.length - 1)]}`;
-       }).join('\n       ')}
+    const labels = ['Extremely easy — anyone would know this', 'Easy — most people would know', 'Medium — requires some knowledge', 'Hard — requires strong knowledge', 'Expert level — enthusiasts/experts only', 'Very expert — deep niche knowledge', 'Master level — almost nobody knows this'];
+    return `${v} points → ${labels[Math.min(i, labels.length - 1)]}`;
+  }).join('\n       ')}
 
        The difficulty jump between each tier must be noticeable.
        Generate questions in order: ${pointValues[0]} first (easiest) → ${pointValues[pointValues.length - 1]} last (hardest)`;
@@ -98,7 +98,7 @@ export const generateBoard = async (categories: string[], settings: GameSettings
         try {
           board = await fetchBoardFromGroq(categories, settings);
         } catch (e) {
-          console.warn('[DEV] Groq call failed, using mock board:', e);
+          console.error('[DEV] Groq API call failed. Check your API key and network. Error:', e);
           board = generateMockBoard(categories, settings);
         }
       }
@@ -156,8 +156,7 @@ async function fetchBoardFromGroq(categories: string[], settings: GameSettings):
       model: MODEL,
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens: 5000,
-      reasoning_format: "hidden"
+      max_tokens: 5000
     })
   });
 
@@ -172,7 +171,20 @@ async function fetchBoardFromGroq(categories: string[], settings: GameSettings):
   if (!text) throw new Error('No content returned from Groq.');
 
   text = text.replace(/```json\n?|```/g, '').trim();
-  return JSON.parse(text);
+  
+  // Robust JSON extraction: Find the first '[' and last ']'
+  const firstBracket = text.indexOf('[');
+  const lastBracket = text.lastIndexOf(']');
+  if (firstBracket !== -1 && lastBracket !== -1) {
+    text = text.substring(firstBracket, lastBracket + 1);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (parseError) {
+    console.error('Failed to parse AI JSON. Raw text:', text);
+    throw parseError;
+  }
 }
 
 /**
