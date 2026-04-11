@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './components/ui/Logo';
 import Setup from './screens/Setup/Setup';
 import GameBoard from './screens/GameBoard/GameBoard';
 import QuestionModal from './screens/QuestionModal/QuestionModal';
 import EndScreen from './screens/EndScreen/EndScreen';
 import { generateBoard } from './services/aiService';
 import { prefetchBoardImages } from './services/imageService';
+import { prefetchBoardAudio } from './services/audioService';
 import { Game, GameSettings } from './types/game';
 
 const DEFAULT_SETTINGS: GameSettings = {
@@ -16,15 +18,49 @@ const DEFAULT_SETTINGS: GameSettings = {
   scoringMode: 'normal',
 };
 
+const FooterVisualizer = () => {
+  const [isHovered, setIsHovered] = useState(false);
+  // Generate stable random idle heights once
+  const [idleHeights] = useState(() => [...Array(120)].map(() => 4 + Math.random() * 20));
+
+  return (
+    <div
+      className="flex items-center gap-[2px] group cursor-crosshair h-20"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {idleHeights.map((idleH, i) => (
+        <motion.div
+          key={i}
+          className="w-[2px] bg-[#222222] group-hover:bg-tertiary-container transition-all duration-500 shadow-[0_0_8px_rgba(254,0,0,0)] group-hover:shadow-[0_0_12px_rgba(254,0,0,0.5)]"
+          initial={{ height: idleH, opacity: 0.2 }}
+          animate={isHovered ? {
+            height: [idleH, idleH + 40, idleH + 10, idleH + 50, idleH],
+            opacity: [0.3, 1, 0.4, 1, 0.3]
+          } : {
+            height: idleH,
+            opacity: 0.2
+          }}
+          transition={{
+            duration: 1.5 + (Math.random() * 1),
+            repeat: isHovered ? Infinity : 0,
+            delay: isHovered ? (i * 0.01) : 0,
+            ease: "easeInOut"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 function OptionButton({ label, sub, selected, onClick }: { label: string; sub?: string; selected: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className={`flex-1 py-3 px-4 text-left border transition-colors ${
-        selected
-          ? 'bg-tertiary-container text-on-tertiary-container border-tertiary-container'
-          : 'bg-[#1A1A1A] text-white/60 border-[#333333] hover:border-white/30'
-      }`}
+      className={`flex-1 py-3 px-4 text-left border transition-colors ${selected
+        ? 'bg-tertiary-container text-on-tertiary-container border-tertiary-container'
+        : 'bg-[#1A1A1A] text-white/60 border-[#333333] hover:border-white/30'
+        }`}
     >
       <span className="font-display font-bold text-sm uppercase tracking-widest block">{label}</span>
       {sub && <span className="font-body text-[0.6rem] tracking-widest opacity-60 mt-0.5 block">{sub}</span>}
@@ -67,8 +103,6 @@ function App() {
     return () => mainEl.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
   const navigateTo = (screen: Screen) => {
     setCurrentScreen(screen);
   };
@@ -82,7 +116,7 @@ function App() {
       // Use check for screen presence so we only initialize if specifically asked
       if (['question', 'game', 'winner'].includes(screen || '')) {
         console.warn(`[DEV] Jumping directly to: ${screen}`);
-        
+
         const dummyPlayers = [
           { id: 'dev-1', name: 'DEV_ALPHA', score: 1400 },
           { id: 'dev-2', name: 'DEV_BETA', score: 850 },
@@ -93,9 +127,9 @@ function App() {
           players: dummyPlayers,
           categories: ['HISTORY', 'SCIENCE', 'TECH', 'FILM', 'POP'],
           board: [
-            { 
-              category: 'HISTORY', 
-              questions: [{ value: 100, question: 'Dummy?', answer: 'Dummy!', status: 'hidden' }] 
+            {
+              category: 'HISTORY',
+              questions: [{ value: 100, question: 'Dummy?', answer: 'Dummy!', status: 'hidden' }]
             },
             // ...Simplified for dev board display
             ...Array(4).fill({ category: 'DATA', questions: [{ value: 100, question: '?', answer: '!', status: 'hidden' }] })
@@ -139,6 +173,7 @@ function App() {
 
       setGameState(newGame);
       prefetchBoardImages(board);
+      prefetchBoardAudio(board);
       navigateTo('GAME');
     } catch (error) {
       setLoadingError(error instanceof Error ? error.message : 'System initialization failed.');
@@ -185,7 +220,8 @@ function App() {
           question: currentQuestion.question,
           answer: currentQuestion.answer,
           status: currentQuestion.status,
-          searchTerm: currentQuestion.searchTerm
+          searchTerm: currentQuestion.searchTerm,
+          searchTermAudio: currentQuestion.searchTermAudio
         }}
         categoryName={gameState.board[categoryIndex].category}
         activePlayer={activePlayer}
@@ -249,11 +285,11 @@ function App() {
 
     switch (currentScreen) {
       case 'SETUP':
-        return <Setup onStart={handleStart} currentSettings={settings} />;
+        return <Setup onStart={handleStart} onOpenSettings={() => setSettingsOpen(true)} currentSettings={settings} />;
       case 'GAME':
         if (!gameState) return <Setup onStart={handleStart} currentSettings={settings} />;
         return (
-          <GameBoard 
+          <GameBoard
             game={gameState}
             onSelectQuestion={(categoryIndex, questionIndex) => {
               setGameState({
@@ -295,199 +331,213 @@ function App() {
     <>
       <div className="h-screen w-full flex flex-col bg-surface-container-lowest text-on-surface overflow-hidden font-body">
 
-      {/* Global Settings Modal */}
-      {settingsOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4">
-          <div className="bg-[#0D0D0D] border-t-2 border-tertiary-container w-full max-w-lg relative p-8 flex flex-col gap-8">
-            <div className="absolute top-0 left-0 w-16 h-0.5 bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"></div>
-            <div className="absolute bottom-0 right-0 w-24 h-0.5 bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"></div>
-
-            <h2 className="font-display font-bold text-3xl tracking-tight text-white uppercase">SETTINGS</h2>
-
-            <div className="flex flex-col gap-3">
-              <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Difficulty</span>
-              <div className="flex gap-2">
-                <OptionButton label="EASY" sub="Common knowledge" selected={pendingSettings.difficulty === 'easy'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'easy' }))} />
-                <OptionButton label="MEDIUM" sub="Topic expertise" selected={pendingSettings.difficulty === 'medium'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'medium' }))} />
-                <OptionButton label="HARD" sub="Expert level" selected={pendingSettings.difficulty === 'hard'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'hard' }))} />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Time Limit</span>
-              <div className="flex gap-2">
-                <OptionButton label="30S" selected={pendingSettings.timeLimit === 30} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 30 }))} />
-                <OptionButton label="60S" selected={pendingSettings.timeLimit === 60} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 60 }))} />
-                <OptionButton label="UNLIMITED" selected={pendingSettings.timeLimit === 0} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 0 }))} />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Questions Per Category</span>
-              <div className="flex gap-2">
-                <OptionButton label="3" selected={pendingSettings.questionsPerCategory === 3} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 3 }))} />
-                <OptionButton label="5" selected={pendingSettings.questionsPerCategory === 5} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 5 }))} />
-                <OptionButton label="7" selected={pendingSettings.questionsPerCategory === 7} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 7 }))} />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Scoring Mode</span>
-              <div className="flex gap-2">
-                <OptionButton label="STANDARD" sub="Scores persist" selected={pendingSettings.scoringMode === 'normal'} onClick={() => setPendingSettings(s => ({ ...s, scoringMode: 'normal' }))} />
-                <OptionButton label="ADVANCED" sub="Permanent death" selected={pendingSettings.scoringMode === 'advanced'} onClick={() => setPendingSettings(s => ({ ...s, scoringMode: 'advanced' }))} />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
+        {/* Global Settings Modal */}
+        <AnimatePresence>
+          {settingsOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onClick={() => setSettingsOpen(false)}
-                className="flex-none px-6 py-4 border border-[#333333] text-white/40 font-display font-bold text-sm tracking-widest uppercase hover:border-white/30 transition-colors"
+                className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 30 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 400 }}
+                className="relative bg-[#0D0D0D] border-t-2 border-tertiary-container w-full max-w-lg p-8 flex flex-col gap-8 shadow-[0_0_50px_rgba(254,0,0,0.2)]"
               >
-                CANCEL
-              </button>
-              <button
-                onClick={() => { setSettings(pendingSettings); setSettingsOpen(false); }}
-                className="flex-1 bg-tertiary-container text-on-tertiary-container font-display font-bold text-sm tracking-widest uppercase py-4 hover:bg-white hover:text-black transition-colors [clip-path:polygon(0_0,100%_0,95%_100%,0%_100%)]"
-              >
-                SAVE SETTINGS
-              </button>
+                <div className="absolute top-0 left-0 w-16 h-0.5 bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"></div>
+                <div className="absolute bottom-0 right-0 w-24 h-0.5 bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"></div>
+
+                <h2 className="font-display font-bold text-3xl tracking-tight text-white uppercase">SETTINGS_STREAM</h2>
+
+                <div className="flex flex-col gap-3">
+                  <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Difficulty</span>
+                  <div className="flex gap-2">
+                    <OptionButton label="EASY" sub="Common knowledge" selected={pendingSettings.difficulty === 'easy'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'easy' }))} />
+                    <OptionButton label="MEDIUM" sub="Topic expertise" selected={pendingSettings.difficulty === 'medium'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'medium' }))} />
+                    <OptionButton label="HARD" sub="Expert level" selected={pendingSettings.difficulty === 'hard'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'hard' }))} />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Time Limit</span>
+                  <div className="flex gap-2">
+                    <OptionButton label="30S" selected={pendingSettings.timeLimit === 30} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 30 }))} />
+                    <OptionButton label="60S" selected={pendingSettings.timeLimit === 60} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 60 }))} />
+                    <OptionButton label="UNLIMITED" selected={pendingSettings.timeLimit === 0} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 0 }))} />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Questions Per Category</span>
+                  <div className="flex gap-2">
+                    <OptionButton label="3" selected={pendingSettings.questionsPerCategory === 3} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 3 }))} />
+                    <OptionButton label="5" selected={pendingSettings.questionsPerCategory === 5} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 5 }))} />
+                    <OptionButton label="7" selected={pendingSettings.questionsPerCategory === 7} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 7 }))} />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <span className="text-[0.65rem] font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Scoring Mode</span>
+                  <div className="flex gap-2">
+                    <OptionButton label="STANDARD" sub="Scores persist" selected={pendingSettings.scoringMode === 'normal'} onClick={() => setPendingSettings(s => ({ ...s, scoringMode: 'normal' }))} />
+                    <OptionButton label="ADVANCED" sub="Permanent death" selected={pendingSettings.scoringMode === 'advanced'} onClick={() => setPendingSettings(s => ({ ...s, scoringMode: 'advanced' }))} />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setSettingsOpen(false)}
+                    className="flex-none px-6 py-4 border border-[#333333] text-white/40 font-display font-bold text-sm tracking-widest uppercase hover:border-white/30 transition-colors"
+                  >
+                    ABORT
+                  </button>
+                  <button
+                    onClick={() => { setSettings(pendingSettings); setSettingsOpen(false); }}
+                    className="flex-1 bg-tertiary-container text-black font-display font-bold text-sm tracking-widest uppercase py-4 hover:bg-white transition-colors [clip-path:polygon(0_0,100%_0,95%_100%,0%_100%)]"
+                  >
+                    SAVE_CONFIG
+                  </button>
+                </div>
+              </motion.div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
+        </AnimatePresence>
 
-      {/* Fixed navbar — never participates in document flow */}
-      <motion.header
-        animate={{ y: navVisible ? 0 : -84 }}
-        transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-        className="fixed top-0 left-0 right-0 z-50 h-20 border-b-2 border-tertiary-container flex items-center justify-between px-6 bg-surface-container-lowest"
-      >
-        <div className="text-tertiary-container font-display font-bold text-3xl italic tracking-tighter uppercase">
-          JEPARTY
-        </div>
-
-        {/* Center Nav */}
-        <nav className="hidden lg:flex items-center gap-12 font-bold text-xs tracking-[0.2em] text-tertiary-container transition-all">
-          <button className="hover:text-white transition-colors">ARENA</button>
-          <button className="hover:text-white transition-colors">STAKES</button>
-          <button className="hover:text-white transition-colors">LEGENDS</button>
-        </nav>
-
-        {/* Right Actions */}
-        <div className="flex items-center gap-6 text-tertiary-container">
-          <button className="hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="square" strokeLinejoin="miter" d="M3 3v18h18M9 9l3 3 3-3 6 6" /></svg>
-          </button>
-          <button
-            onClick={() => { setPendingSettings(settings); setSettingsOpen(true); }}
-            className="hover:text-white transition-colors"
-            title="Settings"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="square" strokeLinejoin="miter" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="square" strokeLinejoin="miter" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-          </button>
-          <button
-            onClick={() => { setGameState(null); navigateTo('SETUP'); }}
-            className="bg-tertiary-container text-on-tertiary-container font-display font-bold text-xs px-6 py-2 uppercase tracking-tight hover:bg-white hover:text-black transition-colors ml-4 [clip-path:polygon(0_0,100%_0,95%_100%,0%_100%)]">
-            NEW GAME
-          </button>
-        </div>
-      </motion.header>
-
-      {/* Spacer that matches header height — always present, never animates */}
-      <div className="h-20 shrink-0" />
-
-      {/* Main Body */}
-      <div className="flex-1 overflow-hidden flex relative">
-
-        {/* Left Sidebar */}
-        <motion.aside
-          animate={{ width: sidebarOpen ? 256 : 0, opacity: sidebarOpen ? 1 : 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="shrink-0 bg-surface-container-lowest border-r-2 border-tertiary-container flex-col justify-between hidden md:flex z-10 overflow-hidden"
+        {/* Top Navbar */}
+        <motion.nav
+          animate={{ y: navVisible ? 0 : -100 }}
+          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
+          className="w-full bg-[#0e0e0e] fixed top-0 z-50 border-b-4 border-tertiary-container shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
         >
-          <div className="flex flex-col">
-            <div className="px-6 py-8 border-b border-[#1A1A1A] flex flex-col gap-1">
-              <span className="text-tertiary-container font-display font-bold text-xl tracking-wider">HOST_01</span>
-              <span className="text-[#666666] text-xs font-bold tracking-[0.2em] uppercase">PHASE: {currentScreen}</span>
-            </div>
-
-            <nav className="flex flex-col py-6 gap-2">
-              <button
-                onClick={() => navigateTo('GAME')}
-                className="flex items-center gap-4 px-6 py-4 text-white hover:text-tertiary hover:bg-[#1A1A1A] transition-colors text-left uppercase font-display font-bold text-sm tracking-widest">
-                <svg className="w-5 h-5 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="square" strokeLinejoin="miter" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-                BOARD
-              </button>
-
-              <button
+          <div className="flex flex-col md:flex-row justify-between items-center px-6 py-4 gap-4">
+            {/* Left Section: Logo + Tabs */}
+            <div className="flex items-center gap-12">
+              <div
                 onClick={() => navigateTo('SETUP')}
-                className={`flex items-center gap-4 px-6 py-4 transition-colors text-left uppercase font-display font-bold text-sm tracking-widest ${currentScreen === 'SETUP' ? 'bg-tertiary-container text-on-tertiary-container shadow-[inset_4px_0_0_rgba(255,255,255,1)]' : 'text-white hover:bg-[#1A1A1A]'}`}>
-                <svg className="w-5 h-5 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="square" strokeLinejoin="miter" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                PLAYERS
-              </button>
-
-              <button className="flex items-center gap-4 px-6 py-4 text-white hover:text-tertiary hover:bg-[#1A1A1A] transition-colors text-left uppercase font-display font-bold text-sm tracking-widest">
-                <svg className="w-5 h-5 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="square" strokeLinejoin="miter" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-                RULES
-              </button>
-
-              <button className="flex items-center gap-4 px-6 py-4 text-white hover:text-tertiary hover:bg-[#1A1A1A] transition-colors text-left uppercase font-display font-bold text-sm tracking-widest">
-                <svg className="w-5 h-5 text-current" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="square" strokeLinejoin="miter" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                EXIT
-              </button>
-            </nav>
-          </div>
-
-          <div className="p-6">
-            <button
-              onClick={() => { setGameState(null); navigateTo('SETUP'); }}
-              className="w-full bg-error hover:bg-white text-black font-display font-bold text-sm tracking-widest uppercase py-4 transition-colors">
-              TERMINATE
-            </button>
-          </div>
-        </motion.aside>
-
-        {/* Toggle button — sits at the edge of the sidebar */}
-        <motion.button
-          onClick={() => setSidebarOpen(prev => !prev)}
-          animate={{ x: sidebarOpen ? 256 : 0 }}
-          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-tertiary-container text-black w-5 h-16 hidden md:flex items-center justify-center font-display font-bold text-xs hover:bg-white transition-colors"
-        >
-          {sidebarOpen ? '‹' : '›'}
-        </motion.button>
-
-        {/* Scrollable Main Area (Where Setup Lives) */}
-        <main id="main-scroll-area" className="flex-1 h-full overflow-y-auto overflow-x-hidden bg-[#0A0A0A] relative flex flex-col">
-          <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-12 pt-12 lg:pt-20 flex-1 flex flex-col">
-
-            {/* Inject Active Screen Component */}
-            <AnimatePresence mode="wait">
-              <div key={currentScreen} className="flex-1 flex flex-col">
-                {renderScreen()}
+                className="h-10 cursor-pointer hover:animate-glitch transition-all group pr-8 border-r border-[#1a1a1a]"
+              >
+                <Logo className="h-full w-auto text-white group-hover:text-tertiary-container transition-colors origin-left scale-x-[1.1]" />
               </div>
-            </AnimatePresence>
+            <div className="flex items-center bg-[#131313] p-1 gap-1 overflow-hidden">
+                {[
+                  { id: 'GAME', label: 'BOARD', icon: 'grid_view', screens: ['GAME', 'QUESTION'] },
+                  { id: 'SETUP', label: 'PLAYERS', icon: 'groups', screens: ['SETUP'] },
+                  { id: 'END', label: currentScreen === 'END' ? 'RESULTS' : 'RULES', icon: 'gavel', screens: ['END'] },
+                ].map((tab) => {
+                  const isActive = tab.screens.includes(currentScreen);
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => navigateTo(tab.id as Screen)}
+                      className="relative px-6 py-2 font-sans font-black uppercase tracking-[0.1em] text-[10px] flex items-center gap-2 transition-all group"
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="nav-selection"
+                          className="absolute inset-0 bg-tertiary-container nav-clip z-0"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                      <span className={`relative z-10 flex items-center gap-2 transition-colors ${isActive ? 'text-black' : 'text-white group-hover:text-white/80'}`}>
+                        <span className="material-symbols-outlined text-sm">{tab.icon}</span>
+                        {tab.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-            {/* Global Footer (Visible underneath screens) */}
-            <footer className="mt-8 mb-4 border-t-4 border-tertiary-container pt-8 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 pb-8">
-              <span className="text-surface-bright font-display font-bold text-4xl tracking-tight opacity-70">
-                JEPARTY_SYSTEM_V.4.02
-              </span>
-              <div className="flex gap-4 md:gap-8 flex-wrap">
-                <span className="text-[#666666] text-xs font-bold tracking-[0.2em]">ENCRYPTED</span>
-                <span className="text-[#666666] text-xs font-bold tracking-[0.2em]">LOW_LATENCY</span>
-                <span className="text-[#666666] text-xs font-bold tracking-[0.2em]">MAX_ENERGY</span>
+            {/* Right Actions */}
+            <div className="flex items-center gap-4">
+              <div className="h-8 w-px bg-[#1a1a1a] mx-2 hidden md:block"></div>
+              <div className="flex items-center gap-4">
+                <button className="text-tertiary-container hover:text-white transition-colors">
+                  <span className="material-symbols-outlined text-xl">leaderboard</span>
+                </button>
+                <button
+                  onClick={() => { setPendingSettings(settings); setSettingsOpen(true); }}
+                  className="text-tertiary-container hover:text-white transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xl">settings</span>
+                </button>
+                <button
+                  onClick={() => { setGameState(null); navigateTo('SETUP'); }}
+                  className="bg-tertiary-container text-black px-6 py-2 font-sans font-black text-[10px] uppercase hover:bg-white transition-all btn-riot"
+                >
+                  NEW GAME
+                </button>
+              </div>
+            </div>
+          </div>
+        </motion.nav>
+
+
+
+        {/* Main Body — Sidebar Removed */}
+        <div className="flex-1 overflow-hidden flex relative">
+
+          {/* Scrollable Main Area (Where Setup Lives) */}
+          <main id="main-scroll-area" className="flex-1 h-full overflow-y-auto overflow-x-hidden bg-[#0A0A0A] relative flex flex-col pt-20">
+            <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-12 pt-4 lg:pt-8 flex-1 flex flex-col">
+
+              {/* Inject Active Screen Component */}
+              <AnimatePresence mode="wait">
+                <div key={currentScreen} className="flex-1 flex flex-col">
+                  {renderScreen()}
+                </div>
+              </AnimatePresence>
+            </div>
+
+            {/* Global Footer (Deconstructed & Minimally Integrated) */}
+            <footer className="mt-20 w-full bg-transparent">
+              <div className="w-full px-8 py-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                {/* Left: Identity & Status */}
+                <div className="flex flex-col gap-2 items-center md:items-start text-center md:text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-tertiary-container animate-pulse shadow-[0_0_8px_rgba(254,0,0,0.6)]"></div>
+                    <span className="text-[9px] font-display font-bold tracking-[0.2em] uppercase text-[#444444]">SYS_OP: ACTIVE</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-white/20 font-display text-sm tracking-tighter uppercase italic">Jeparty_OS</span>
+                    <div className="w-1 h-1 rounded-full bg-[#222222]"></div>
+                    <span className="text-[10px] font-body font-bold tracking-[0.1em] uppercase text-tertiary-container/60">
+                      BY YASH KAUL
+                    </span>
+                  </div>
+                </div>
+
+                {/* Center: Interactive Visualizer (Slimmer) */}
+                <div className="hidden lg:flex flex-col items-center gap-2 group">
+                  <FooterVisualizer />
+                  <div className="text-[7px] font-display font-bold tracking-[0.4em] text-[#222222] group-hover:text-tertiary-container/30 transition-colors uppercase">Stream_Active</div>
+                </div>
+
+                {/* Right: Socials */}
+                <div className="flex flex-col gap-3 items-center md:items-end">
+                  <div className="flex gap-8 text-[10px] font-display font-black tracking-[0.1em] uppercase">
+                    <a href="#" className="text-white/40 hover:text-white transition-all">GIT</a>
+                    <a href="#" className="text-white/40 hover:text-white transition-all">LNK</a>
+                    <a href="#" className="text-white/40 hover:text-white transition-all">X_SO</a>
+                  </div>
+                  <div className="text-[8px] font-body tracking-[0.4em] text-[#222222] uppercase">
+                    ©2026_ANRCHY
+                  </div>
+                </div>
               </div>
             </footer>
-          </div>
-        </main>
+          </main>
 
+        </div>
       </div>
-    </div>
 
-    {/* Bug 1: QuestionModal as a React Portal — renders above ALL layout including sidebar/header */}
-    {renderQuestionPortal()}
+      {/* Bug 1: QuestionModal as a React Portal — renders above ALL layout including sidebar/header */}
+      {renderQuestionPortal()}
     </>
   );
 }

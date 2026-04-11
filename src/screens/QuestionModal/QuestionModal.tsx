@@ -3,9 +3,19 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { resolveImage } from '../../services/imageService';
 import { PageTransition } from '../../components/ui/PageTransition';
 import { CyberpunkButton } from '../../components/ui/CyberpunkButton';
+import { AudioPlayer } from '../../components/ui/AudioPlayer';
+import { resolveAudio } from '../../services/audioService';
+import { cleanCategoryName } from '../../utils/gameUtils';
 
 interface QuestionModalProps {
-  question: { value: number; question: string; answer: string; status: string; searchTerm?: string };
+  question: { 
+    value: number; 
+    question: string; 
+    answer: string; 
+    status: string; 
+    searchTerm?: string;
+    searchTermAudio?: string;
+  };
   categoryName: string;
   activePlayer: { name: string; score: number };
   isUnderdog: boolean;
@@ -33,6 +43,8 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imageLoading, setImageLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(timeLimit);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioLoading, setAudioLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Image fetch
@@ -44,6 +56,16 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       setImageLoading(false);
     });
   }, [question.searchTerm]);
+
+  // Audio fetch
+  useEffect(() => {
+    if (!question.searchTermAudio) return;
+    setAudioLoading(true);
+    resolveAudio(question.searchTermAudio).then(url => {
+      setAudioUrl(url);
+      setAudioLoading(false);
+    });
+  }, [question.searchTermAudio]);
 
   // Countdown timer
   useEffect(() => {
@@ -111,7 +133,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
       {/* 2. Content Header (Category & Value) */}
       <header className="px-12 py-10 shrink-0 flex justify-between items-end">
         <div className="bg-[var(--color-primary-dim)] text-black px-6 py-2">
-          <span className="font-display font-black text-sm tracking-tighter uppercase italic">CATEGORY: {categoryName}</span>
+          <span className="font-display font-black text-sm tracking-tighter uppercase italic">CATEGORY: {cleanCategoryName(categoryName)}</span>
         </div>
         <div className="font-display font-black text-6xl text-white/10 uppercase tracking-tighter italic scale-y-110 origin-bottom">
           VALUE: {val}
@@ -161,6 +183,14 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
               </div>
             ) : null}
           </div>
+        )}
+
+        {/* Audio Content (if present) */}
+        {question.searchTermAudio && (
+          <AudioPlayer
+            previewUrl={audioUrl}
+            isLoading={audioLoading}
+          />
         )}
 
         {/* Action Layer */}

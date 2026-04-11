@@ -78,6 +78,26 @@ body {
 .animate-power-on { animation: power-on 0.5s cubic-bezier(0.19, 1, 0.22, 1) both; }
 .animate-data-stream { animation: data-stream 0.4s ease-out both; }
 
+.nav-clip {
+  clip-path: polygon(0% 0%, 100% 0%, 92% 100%, 0% 100%);
+}
+
+.shard-card {
+  clip-path: polygon(0% 0%, 100% 5%, 98% 100%, 2% 95%);
+}
+
+.shard-card-reverse {
+  clip-path: polygon(2% 3%, 100% 0%, 95% 98%, 0% 100%);
+}
+
+.input-shard {
+  clip-path: polygon(0% 0%, 100% 0%, 95% 100%, 0% 100%);
+}
+
+.btn-riot {
+  clip-path: polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }

@@ -48,6 +48,7 @@ export interface BoardCategory {
     answer: string;
     status: 'hidden' | 'revealed' | 'answered';
     searchTerm?: string;
+    searchTermAudio?: string;
   }[];
 }
 

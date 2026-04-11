@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>JEPARTY | SETUP_PHASE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&amp;family=Inter:wght@400;700;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "outline": "#757575",
+                        "on-primary-fixed-variant": "#600000",
+                        "tertiary-fixed": "#ff9382",
+                        "primary-fixed": "#ff7763",
+                        "inverse-on-surface": "#555555",
+                        "background": "#0e0e0e",
+                        "on-tertiary-fixed": "#3a0000",
+                        "surface-container-lowest": "#000000",
+                        "on-error": "#490013",
+                        "secondary-fixed-dim": "#d4d4d4",
+                        "on-tertiary": "#4a0000",
+                        "on-tertiary-fixed-variant": "#7a0100",
+                        "tertiary-fixed-dim": "#ff7c69",
+                        "error-dim": "#d73357",
+                        "on-secondary-fixed": "#3e4040",
+                        "on-secondary-container": "#d0d0d0",
+                        "tertiary": "#ff725e",
+                        "on-secondary": "#505252",
+                        "surface": "#0e0e0e",
+                        "surface-container-low": "#131313",
+                        "on-background": "#ffffff",
+                        "tertiary-dim": "#eb0000",
+                        "on-primary-fixed": "#000000",
+                        "error": "#ff6e84",
+                        "on-secondary-fixed-variant": "#5a5c5c",
+                        "surface-bright": "#2c2c2c",
+                        "surface-container-high": "#1f1f1f",
+                        "primary-fixed-dim": "#ff5b47",
+                        "on-primary-container": "#4f0000",
+                        "secondary-fixed": "#e2e2e2",
+                        "error-container": "#a70138",
+                        "surface-container-highest": "#262626",
+                        "on-surface-variant": "#ababab",
+                        "tertiary-container": "#fe0000",
+                        "outline-variant": "#484848",
+                        "primary-dim": "#eb0000",
+                        "secondary": "#e2e2e2",
+                        "on-surface": "#ffffff",
+                        "inverse-surface": "#f9f9f9",
+                        "on-error-container": "#ffb2b9",
+                        "secondary-dim": "#d4d4d4",
+                        "surface-container": "#191919",
+                        "secondary-container": "#454747",
+                        "inverse-primary": "#c10100",
+                        "on-primary": "#650000",
+                        "surface-dim": "#0e0e0e",
+                        "primary": "#ff8e7d",
+                        "surface-tint": "#ff8e7d",
+                        "on-tertiary-container": "#000000",
+                        "surface-variant": "#262626",
+                        "primary-container": "#ff7763"
+                    },
+                    fontFamily: {
+                        "headline": ["Archivo Black", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .display-headline {
+            letter-spacing: -0.05em;
+            text-transform: uppercase;
+        }
+        .shard-card {
+            clip-path: polygon(0% 0%, 100% 5%, 98% 100%, 2% 95%);
+        }
+        .shard-card-reverse {
+            clip-path: polygon(2% 3%, 100% 0%, 95% 98%, 0% 100%);
+        }
+        .input-shard {
+            clip-path: polygon(0% 0%, 100% 0%, 95% 100%, 0% 100%);
+        }
+        .btn-riot {
+            clip-path: polygon(5% 0%, 100% 0%, 95% 100%, 0% 100%);
+        }
+        .nav-clip {
+            clip-path: polygon(0% 0%, 100% 0%, 92% 100%, 0% 100%);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-primary-dim selection:text-on-primary-fixed overflow-x-hidden">
+<!-- TopNavBar Integration (Expanded functionality) -->
+<nav class="w-full bg-[#0e0e0e] fixed top-0 z-50 border-b-4 border-[#ff0000]">
+<div class="flex flex-col md:flex-row justify-between items-center px-6 py-3 gap-4">
+<div class="flex items-center gap-8">
+<div class="text-4xl font-headline italic tracking-tighter text-[#ff0000] uppercase skew-x-[-10deg]">JEPARTY</div>
+<div class="hidden xl:flex flex-col border-l-2 border-[#1f1f1f] pl-6">
+<div class="text-[#ff0000] font-headline text-lg leading-tight">HOST_01</div>
+<div class="font-body font-bold text-[8px] tracking-[0.2em] text-on-surface-variant uppercase">PHASE: SETUP</div>
+</div>
+</div>
+<div class="flex items-center space-x-1 md:space-x-4">
+<div class="hidden md:flex items-center bg-[#131313] p-1">
+<a class="px-4 py-2 font-headline uppercase tracking-tighter text-white hover:bg-[#1f1f1f] transition-colors text-xs flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="grid_view">grid_view</span> BOARD
+                </a>
+<a class="px-4 py-2 font-headline uppercase tracking-tighter bg-[#ff0000] text-[#000000] transition-colors text-xs flex items-center gap-2 nav-clip" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="groups">groups</span> PLAYERS
+                </a>
+<a class="px-4 py-2 font-headline uppercase tracking-tighter text-white hover:bg-[#1f1f1f] transition-colors text-xs flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-sm" data-icon="gavel">gavel</span> RULES
+                </a>
+</div>
+<div class="h-8 w-px bg-[#1f1f1f] mx-2 hidden md:block"></div>
+<div class="flex items-center space-x-3">
+<span class="material-symbols-outlined text-[#ff0000] cursor-pointer hover:text-white transition-colors" data-icon="leaderboard">leaderboard</span>
+<span class="material-symbols-outlined text-[#ff0000] cursor-pointer hover:text-white transition-colors" data-icon="settings">settings</span>
+<button class="bg-[#ff0000] text-[#000000] px-4 py-1.5 font-headline font-bold text-xs uppercase hover:bg-white transition-all">NEW GAME</button>
+<button class="hidden lg:block bg-[#1f1f1f] text-error px-4 py-1.5 font-headline font-bold text-xs uppercase border border-error/30 hover:bg-error hover:text-black transition-all">EXIT</button>
+</div>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas (Expanded to full width) -->
+<main class="pt-32 px-6 pb-12 min-h-screen bg-background">
+<div class="max-w-7xl mx-auto">
+<!-- Hero Header -->
+<header class="mb-16 relative">
+<div class="absolute -top-10 -left-10 w-40 h-40 bg-primary-dim opacity-10 blur-3xl"></div>
+<h1 class="font-headline text-7xl md:text-9xl font-black text-primary-dim display-headline leading-[0.9] mb-4">
+                INITIALIZE<br/>CARNAGE
+            </h1>
+<div class="flex flex-col md:flex-row md:items-center gap-4">
+<p class="font-label text-xs tracking-[0.3em] text-on-surface-variant uppercase bg-surface-container-high inline-block px-3 py-1 font-bold">
+                    ASSEMBLING COMPETITORS // SELECTING DATA STREAMS
+                </p>
+<div class="md:hidden">
+<div class="text-[#ff0000] font-headline text-xl">HOST_01</div>
+<div class="font-body font-bold text-[8px] tracking-[0.2em] text-on-surface-variant uppercase">PHASE: SETUP</div>
+</div>
+</div>
+</header>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+<!-- Player Section (Bento Style) -->
+<section class="md:col-span-7 space-y-8">
+<div class="shard-card bg-primary-dim p-1">
+<div class="bg-surface-container-low p-8">
+<div class="flex justify-between items-end mb-8">
+<h2 class="font-headline text-4xl text-white uppercase italic">PLAYERS</h2>
+<span class="font-label text-[10px] text-primary-dim font-black bg-white px-2 mb-1">LIMIT: 08</span>
+</div>
+<div class="space-y-4">
+<!-- Dynamic Player Fields -->
+<div class="relative group">
+<div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary-dim group-focus-within:h-12 transition-all"></div>
+<label class="block font-label text-[10px] font-bold text-on-surface-variant mb-1 uppercase tracking-widest">PLAYER_01</label>
+<input class="w-full bg-surface-container-highest border-none border-b-4 border-primary-dim text-white font-headline text-xl focus:ring-0 focus:border-white transition-colors placeholder:text-surface-container-high py-4 px-4 input-shard" placeholder="ENTER CODENAME..." type="text"/>
+</div>
+<div class="relative group">
+<div class="absolute -left-4 top-1/2 -translate-y-1/2 w-1 h-8 bg-surface-container-high group-focus-within:h-12 transition-all"></div>
+<label class="block font-label text-[10px] font-bold text-on-surface-variant mb-1 uppercase tracking-widest">PLAYER_02</label>
+<input class="w-full bg-surface-container-high border-none border-b-4 border-surface-container-highest text-white font-headline text-xl focus:ring-0 focus:border-primary-dim transition-colors placeholder:text-surface-container-highest py-4 px-4 input-shard" placeholder="ENTER CODENAME..." type="text"/>
+</div>
+<button class="w-full border-2 border-dashed border-surface-container-highest py-4 text-on-surface-variant font-headline text-xs uppercase tracking-widest hover:bg-surface-container-low hover:text-white transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span> ADD COMPETITOR
+                            </button>
+</div>
+</div>
+</div>
+<!-- Additional Context Card -->
+<div class="bg-surface-container-high p-6 flex items-start gap-4 border-l-4 border-error">
+<div class="p-3 bg-primary-dim text-on-primary-fixed">
+<span class="material-symbols-outlined" data-icon="warning">warning</span>
+</div>
+<div>
+<h4 class="font-headline font-bold text-white uppercase tracking-tighter">PERMANENT DEATH ENABLED</h4>
+<p class="font-body text-xs text-on-surface-variant leading-relaxed">Scores reset upon exit. Players disconnected during the prompt phase will be purged from the active board session without refund.</p>
+</div>
+</div>
+</section>
+<!-- Category Section -->
+<section class="md:col-span-5">
+<div class="shard-card-reverse bg-surface-container-highest p-8 border-l-8 border-primary-dim">
+<h2 class="font-headline text-4xl text-primary-dim uppercase italic mb-8">CATEGORIES</h2>
+<div class="space-y-3">
+<!-- Category Inputs -->
+<div class="flex items-center gap-3">
+<span class="font-headline text-2xl text-surface-container-high italic">01</span>
+<input class="flex-1 bg-transparent border-none border-b-2 border-primary-dim text-white font-headline text-lg focus:ring-0 py-2 px-0 uppercase italic tracking-tighter" type="text" value="CYBERPUNK NOIR"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-headline text-2xl text-surface-container-high italic">02</span>
+<input class="flex-1 bg-transparent border-none border-b-2 border-surface-container-high text-on-surface-variant font-headline text-lg focus:ring-0 py-2 px-0 uppercase italic tracking-tighter focus:text-white focus:border-primary-dim" type="text" value="ANALOG HORROR"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-headline text-2xl text-surface-container-high italic">03</span>
+<input class="flex-1 bg-transparent border-none border-b-2 border-surface-container-high text-on-surface-variant font-headline text-lg focus:ring-0 py-2 px-0 uppercase italic tracking-tighter focus:text-white focus:border-primary-dim" placeholder="EMPTY SLOT..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-headline text-2xl text-surface-container-high italic">04</span>
+<input class="flex-1 bg-transparent border-none border-b-2 border-surface-container-high text-on-surface-variant font-headline text-lg focus:ring-0 py-2 px-0 uppercase italic tracking-tighter focus:text-white focus:border-primary-dim" placeholder="EMPTY SLOT..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<span class="font-headline text-2xl text-surface-container-high italic">05</span>
+<input class="flex-1 bg-transparent border-none border-b-2 border-surface-container-high text-on-surface-variant font-headline text-lg focus:ring-0 py-2 px-0 uppercase italic tracking-tighter focus:text-white focus:border-primary-dim" placeholder="EMPTY SLOT..." type="text"/>
+</div>
+</div>
+<div class="mt-12 bg-surface-container-low p-4 relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-6xl" data-icon="terminal">terminal</span>
+</div>
+<div class="font-label text-[10px] text-on-surface-variant font-bold uppercase mb-2">AUTO_FILL_OPTIONS</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container-highest text-[10px] font-headline text-white cursor-pointer hover:bg-primary-dim transition-colors">RETRO_GAMING</span>
+<span class="px-3 py-1 bg-surface-container-highest text-[10px] font-headline text-white cursor-pointer hover:bg-primary-dim transition-colors">80S_SYNTH</span>
+<span class="px-3 py-1 bg-surface-container-highest text-[10px] font-headline text-white cursor-pointer hover:bg-primary-dim transition-colors">KITCHEN_SINK</span>
+</div>
+</div>
+</div>
+<!-- CTA BUTTON AREA -->
+<div class="mt-12 group relative">
+<!-- Shadow Block -->
+<div class="absolute inset-0 bg-white translate-x-2 translate-y-2 btn-riot"></div>
+<!-- Actual Button -->
+<button class="relative w-full bg-primary-dim text-on-primary-fixed py-8 px-6 btn-riot transition-transform active:translate-x-1 active:translate-y-1">
+<div class="flex justify-between items-center">
+<span class="font-headline text-5xl italic uppercase tracking-tighter">START GAME</span>
+<span class="material-symbols-outlined text-4xl font-bold" data-icon="bolt" style="font-variation-settings: 'FILL' 1;">bolt</span>
+</div>
+</button>
+</div>
+<!-- TERMINATE ACTION (Moved from Sidebar) -->
+<div class="mt-8 flex justify-end">
+<button class="bg-error-container text-on-error-container font-headline px-8 py-3 uppercase tracking-tighter hover:bg-error transition-all border-r-8 border-error text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">dangerous</span>
+                        TERMINATE SESSION
+                    </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Footer Decoration -->
+<footer class="px-6 py-12 border-t-8 border-primary-dim mt-24">
+<div class="flex flex-col md:flex-row justify-between items-center gap-8 opacity-40 grayscale hover:grayscale-0 transition-all">
+<div class="font-headline text-4xl text-white italic tracking-tighter">JEPARTY_SYSTEM_V.4.02</div>
+<div class="flex gap-12 font-label text-xs font-bold text-on-surface-variant tracking-[0.5em] uppercase">
+<span>ENCRYPTED</span>
+<span>LOW_LATENCY</span>
+<span>MAX_ENERGY</span>
+</div>
+</div>
+</footer>
+<!-- Mobile Bottom Nav -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full bg-[#0e0e0e] flex justify-around items-center py-4 z-50 border-t-4 border-primary-dim">
+<div class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="text-[10px] font-headline uppercase mt-1">BOARD</span>
+</div>
+<div class="flex flex-col items-center text-primary-dim">
+<span class="material-symbols-outlined" data-icon="groups" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="text-[10px] font-headline uppercase mt-1">PLAYERS</span>
+</div>
+<div class="flex flex-col items-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+<span class="text-[10px] font-headline uppercase mt-1">RULES</span>
+</div>
+<div class="flex flex-col items-center text-error">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="text-[10px] font-headline uppercase mt-1">EXIT</span>
+</div>
+</nav>
+</body></html>

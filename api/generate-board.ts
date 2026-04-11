@@ -39,17 +39,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
   const visualCategories = categories.filter(c => c.toLowerCase().endsWith(' -v'));
-  const promptCategories = categories.map(c => c.replace(/ -v$/i, ''));
+  const audioCategories = categories.filter(c => c.toLowerCase().endsWith(' -a'));
+  const promptCategories = categories.map(c => c.replace(/\s*-[v|a]\s*$/i, '').trim());
 
   const prompt = `Generate a complete Jeopardy game board for these 5 categories: ${promptCategories.join(', ')}.
       Return ONLY valid JSON, no markdown, no backticks, no explanation.
       A JSON array of exactly 5 objects: { category: string, questions: [] }
-      Each question object: { value: number, question: string, answer: string, status: 'hidden', searchTerm?: string }
+      Each question object: { value: number, question: string, answer: string, status: 'hidden', searchTerm?: string, searchTermAudio?: string }
 
       DIFFICULTY: ${DIFFICULTY_INSTRUCTION[difficulty] || DIFFICULTY_INSTRUCTION.medium}
 
       SPECIAL INSTRUCTION:
-      For [VISUAL] categories ([${visualCategories.map(c => c.replace(/ -v$/i, '')).join(', ')}]), generate questions that match the category theme exactly.
+      For [VISUAL] categories ([${visualCategories.map(c => c.replace(/\s*-v\s*$/i, '').trim()).join(', ')}]), generate questions that match the category theme exactly.
       However, only generate questions about subjects that have a real Wikipedia page with a thumbnail image.
 
       Rules:
@@ -69,8 +70,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
        - imageSource stays 'wikipedia' for all visual questions
        - The answer field must match the searchTerm subject exactly.
        - The question text should be "Guess the character" or "Who is this?".
-      
-      For all other categories, DO NOT include a searchTerm field.
+
+      For [AUDIO] categories ([${audioCategories.map(c => c.replace(/\s*-a\s*$/i, '').trim()).join(', ')}]), generate music trivia questions where players must identify a song.
+        - Set "searchTermAudio" to the song title and artist (e.g. "Bohemian Rhapsody Queen", "Billie Jean Michael Jackson").
+        - The "question" field should say something like "Guess the song:" or "Name this track:" — never reveal the title/artist in the question text.
+        - DO NOT set "searchTerm" (image) for audio questions. Only set "searchTermAudio".
+        - The "answer" field must be the song title and artist.
+
+      For all other categories, DO NOT include a searchTerm or searchTermAudio field.
       Make questions fun/casual. Each category must have exactly ${questionsPerCategory} questions with point values: ${pointValues.join(', ')}.
 
       QUESTION QUALITY RULES — follow strictly:
