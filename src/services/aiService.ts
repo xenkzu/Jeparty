@@ -2,7 +2,7 @@ import { Board, GameSettings } from '../types/game';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+const MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
 // Point values by questionsPerCategory
 const POINT_VALUES: Record<number, number[]> = {

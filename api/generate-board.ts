@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
   const BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
-  const MODEL = 'llama-3.3-70b-versatile';
+  const MODEL = 'meta-llama/llama-4-scout-17b-16e-instruct';
 
   const visualCategories = categories.filter(c => c.toLowerCase().endsWith(' -v'));
   const promptCategories = categories.map(c => c.replace(/ -v$/i, ''));
