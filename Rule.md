@@ -5,8 +5,8 @@
 - **Selection**: Once a tile is clicked, the question is revealed. The game enters "Locked" state where only that question is active.
 - **Answering**: Any player can attempt to answer. The Moderator must manually award or deduct points based on the player's verbal response.
 - **Resolution**: 
-    - If a player is correct: They get the points and retain control of the board to pick the next question.
-    - If a player is incorrect: The points are deducted, and other players may still attempt to answer.
+    - If a player is correct: They get the full points and the moderator moves to the next question.
+    - If a player is incorrect: The points are deducted and the moderator moves to the next question.
 - **Skipping**: If no one knows the answer, the Moderator can reveal the answer and close the question. No points are awarded or deducted, and board control stays with the player who originally chose the question.
 
 ## 2. SCORING SYSTEM (POINT_CALCULATION)
