@@ -143,7 +143,7 @@ function App() {
             ...Array(4).fill({ category: 'DATA', questions: [{ value: 100, question: '?', answer: '!', status: 'hidden' }] })
           ],
           scoringMode: 'normal',
-          settings: { difficulty: 'medium', timeLimit: 60, questionsPerCategory: 5, scoringMode: 'normal' },
+          settings: { difficulty: 'medium', timeLimit: 60, questionsPerCategory: 5, scoringMode: 'normal', uiVersion: 'v2' },
           turnIndex: 0,
           currentQuestion: screen === 'question' ? { categoryIndex: 0, questionIndex: 0 } : null
         };

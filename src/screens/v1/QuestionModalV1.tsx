@@ -193,10 +193,20 @@ const QuestionModalV1: React.FC<QuestionModalProps> = ({
 
         {/* Audio Content (if present) */}
         {question.searchTermAudio && (
-          <AudioPlayer
-            previewUrl={audioUrl}
-            isLoading={audioLoading}
-          />
+          <div className="relative group">
+            <AudioPlayer
+              previewUrl={audioUrl}
+              isLoading={audioLoading}
+            />
+            {onRefreshAudio && !revealed && !audioLoading && (
+              <button 
+                onClick={onRefreshAudio}
+                className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-[var(--color-primary-dim)] text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+              >
+                <span className="material-symbols-outlined text-sm">refresh</span>
+              </button>
+            )}
+          </div>
         )}
 
         {/* Action Layer */}
@@ -224,10 +234,16 @@ const QuestionModalV1: React.FC<QuestionModalProps> = ({
                   {question.answer}
                 </p>
               </div>
-              <div className="flex items-center gap-10">
+              <div className="flex items-center gap-10 flex-wrap">
                 <CyberpunkButton variant="ghost" onClick={onWrong} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-[var(--color-error)] uppercase underline underline-offset-8 decoration-2 hover:decoration-[var(--color-error)]">WRONG (<span className="animate-blink-cursor">{previews.wrong}</span>)</CyberpunkButton>
                 <CyberpunkButton variant="ghost" onClick={onCorrect} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-green-500 uppercase underline underline-offset-8 decoration-2 hover:decoration-green-500">CORRECT (+<span className="animate-blink-cursor">{previews.correct}</span>)</CyberpunkButton>
                 <CyberpunkButton variant="ghost" onClick={onPass} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-white uppercase underline underline-offset-8 decoration-2 hover:decoration-white">PASS (<span className="animate-blink-cursor">{previews.pass}</span>)</CyberpunkButton>
+                {onFinalPass && (
+                  <CyberpunkButton variant="ghost" onClick={onFinalPass} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-white uppercase underline underline-offset-8 decoration-2 hover:decoration-white">FINAL PASS</CyberpunkButton>
+                )}
+                {onSkip && (
+                  <CyberpunkButton variant="ghost" onClick={() => onSkip(0)} className="font-display font-bold text-xs tracking-[0.3em] text-white/40 hover:text-white uppercase underline underline-offset-8 decoration-2 hover:decoration-white">SKIP</CyberpunkButton>
+                )}
               </div>
                 </motion.div>
               )}
