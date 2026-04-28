@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Title from '../../components/ui/Title';
 import { GameSettings } from '../../types/game';
 import { PageTransition } from '../../components/ui/PageTransition';
-import { CyberpunkButton } from '../../components/ui/CyberpunkButton';
 
 interface SetupProps {
   onStart: (players: string[], categories: string[], settings: GameSettings) => void;
