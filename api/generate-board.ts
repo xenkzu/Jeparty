@@ -69,7 +69,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY;
   const BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
-  const MODEL = 'llama-3.3-70b-versatile';
+  const MODEL = 'qwen/qwen3.8-27b';
 
   const visualCategories = categories.filter(c => c.toLowerCase().endsWith(' -v'));
   const audioCategories = categories.filter(c => c.toLowerCase().endsWith(' -a'));

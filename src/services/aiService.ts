@@ -3,7 +3,7 @@ import { getExclusionTopics, recordBoardTopics } from './topicMemoryService';
 
 const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
 const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'llama-3.3-70b-versatile';
+const MODEL = 'qwen/qwen3.8-27b';
 
 // Point values by questionsPerCategory
 const POINT_VALUES: Record<number, number[]> = {
