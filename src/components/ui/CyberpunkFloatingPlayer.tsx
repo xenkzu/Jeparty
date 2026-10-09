@@ -32,20 +32,18 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
   const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const userPausedRef = useRef(false);
+  const userInteractedRef = useRef(false);
 
-  const playAudio = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.volume = isMuted ? 0 : volume;
-    audio.loop = isLooping;
-    audio.play()
-      .then(() => setIsPlaying(true))
-      .catch((err) => {
-        console.warn('[FloatingPlayer] Autoplay waiting for user gesture:', err);
-      });
-  };
+  // Sync volume and looping when states change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+      audioRef.current.loop = isLooping;
+    }
+  }, [volume, isMuted, isLooping]);
 
-  // Auto-play attempt on mount and global interaction listener
+  // Auto-play attempt on mount with one-time first interaction unlock
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -53,45 +51,69 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
     audio.volume = isMuted ? 0 : volume;
     audio.loop = isLooping;
 
-    // Attempt playback immediately
-    playAudio();
+    // Attempt initial autoplay
+    audio.play()
+      .then(() => {
+        setIsPlaying(true);
+      })
+      .catch(() => {
+        // Autoplay restricted on cold page load
+      });
 
-    // Universal unlock: on first interaction anywhere in the window
-    const handleGlobalInteraction = () => {
-      if (audioRef.current && audioRef.current.paused) {
-        playAudio();
+    // One-time fallback: start audio on first user gesture anywhere outside the player
+    const handleFirstGesture = (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest('#cyberpunk-floating-player')) {
+        return;
+      }
+
+      if (!userInteractedRef.current) {
+        userInteractedRef.current = true;
+        if (audioRef.current && audioRef.current.paused && !userPausedRef.current) {
+          audioRef.current.volume = isMuted ? 0 : volume;
+          audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        }
       }
     };
 
-    window.addEventListener('click', handleGlobalInteraction);
-    window.addEventListener('pointerdown', handleGlobalInteraction);
-    window.addEventListener('keydown', handleGlobalInteraction);
+    window.addEventListener('click', handleFirstGesture, { once: true });
+    window.addEventListener('pointerdown', handleFirstGesture, { once: true });
+    window.addEventListener('keydown', handleFirstGesture, { once: true });
 
     return () => {
-      window.removeEventListener('click', handleGlobalInteraction);
-      window.removeEventListener('pointerdown', handleGlobalInteraction);
-      window.removeEventListener('keydown', handleGlobalInteraction);
+      window.removeEventListener('click', handleFirstGesture);
+      window.removeEventListener('pointerdown', handleFirstGesture);
+      window.removeEventListener('keydown', handleFirstGesture);
     };
-  }, [volume, isMuted, isLooping]);
+  }, []);
 
-  const togglePlay = () => {
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isPlaying) {
+    userInteractedRef.current = true;
+
+    if (!audio.paused) {
+      userPausedRef.current = true;
       audio.pause();
       setIsPlaying(false);
     } else {
+      userPausedRef.current = false;
       audio.volume = isMuted ? 0 : volume;
-      audio.play().then(() => {
-        setIsPlaying(true);
-      }).catch(err => {
-        console.warn('[FloatingPlayer] Audio play interrupted:', err);
-      });
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(err => {
+          console.warn('[FloatingPlayer] Audio play interrupted:', err);
+        });
     }
   };
 
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     const val = parseFloat(e.target.value);
     setVolume(val);
     if (isMuted && val > 0) setIsMuted(false);
@@ -103,7 +125,9 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
     } catch {}
   };
 
-  const toggleMute = () => {
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setIsMuted(prev => {
       const next = !prev;
       if (audioRef.current) {
@@ -113,7 +137,9 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
     });
   };
 
-  const toggleLoop = () => {
+  const toggleLoop = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setIsLooping(prev => {
       const next = !prev;
       if (audioRef.current) {
@@ -127,22 +153,16 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
 
   return (
     <>
-      {/* Hidden native audio element for background soundtrack */}
+      {/* Native audio element for background soundtrack */}
       <audio
         ref={audioRef}
         src={metadata.audioUrl}
         preload="auto"
-        autoPlay
         playsInline
         loop={isLooping}
         onLoadedMetadata={() => {
           if (audioRef.current) {
             audioRef.current.volume = isMuted ? 0 : volume;
-          }
-        }}
-        onCanPlay={() => {
-          if (audioRef.current && audioRef.current.paused) {
-            audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
           }
         }}
         onEnded={() => {
@@ -154,6 +174,7 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
 
       {/* Persistent Floating Cyberpunk Music Player Card */}
       <motion.div
+        id="cyberpunk-floating-player"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -280,6 +301,7 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
 };
 
 export default CyberpunkFloatingPlayer;
+
 
 
 
