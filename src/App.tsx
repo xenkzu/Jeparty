@@ -23,6 +23,7 @@ import EndScreenV3 from './screens/v3/EndScreenV3';
 import { CyberpunkPreloader } from './components/ui/CyberpunkPreloader';
 import { GeneratingBoardGlitch } from './components/ui/GeneratingBoardGlitch';
 import { CyberViewportFrame } from './components/ui/CyberViewportFrame';
+import { CyberpunkFloatingPlayer } from './components/ui/CyberpunkFloatingPlayer';
 
 const SETTINGS_STORAGE_KEY = 'jeparty_settings_v1';
 
@@ -1036,13 +1037,14 @@ function App() {
 
       <AnimatePresence>
         {showResumeBanner && (
-          <motion.div
-            initial={{ y: -60, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -60, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-[#000000] border border-tertiary-container/60 px-8 py-3 flex items-center gap-4"
-          >
+          <div className="fixed top-24 left-0 right-0 z-[200] flex justify-center pointer-events-none">
+            <motion.div
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -60, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              className="bg-[#000000] border border-tertiary-container/60 px-8 py-3 flex items-center gap-4 pointer-events-auto shadow-ambient"
+            >
             <motion.div
               className="w-2 h-2 bg-green-500 rounded-full"
               animate={{ opacity: [1, 0, 1] }}
@@ -1058,8 +1060,12 @@ function App() {
               ✕
             </button>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+    </AnimatePresence>
+
+    {/* Persistent Bottom-Right Hovering Ambient Music Player */}
+    <CyberpunkFloatingPlayer />
     </>
   );
 }

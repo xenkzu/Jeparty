@@ -36,15 +36,17 @@ export const CyberViewportFrame: React.FC<CyberViewportFrameProps> = ({
       </motion.div>
 
       {/* Bottom Center Notch */}
-      <motion.div 
-        initial={{ opacity: 0, scaleX: 0 }}
-        animate={{ opacity: 1, scaleX: 1 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 sm:w-64 md:w-80 h-3.5 bg-[#fcee0a] shadow-[0_0_12px_rgba(252,238,10,0.4)] origin-center"
-        style={{
-          clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0% 100%)',
-        }}
-      />
+      <div className="absolute bottom-0 left-0 right-0 flex justify-center pointer-events-none">
+        <motion.div 
+          initial={{ opacity: 0, scaleX: 0 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
+          className="w-48 sm:w-64 md:w-80 h-3.5 bg-[#fcee0a] shadow-[0_0_12px_rgba(252,238,10,0.4)] origin-center"
+          style={{
+            clipPath: 'polygon(12% 0, 88% 0, 100% 100%, 0% 100%)',
+          }}
+        />
+      </div>
 
       {/* ========================================================= */}
       {/* LEFT SIDE CYBERCN BILATERAL FRAME RAIL (DRAW DOWN) */}
