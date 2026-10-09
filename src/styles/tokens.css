@@ -1,51 +1,64 @@
 :root {
-  /* Colors from Stitch Design System */
-  --color-background: #0e0e0e;
-  --color-on-background: #ffffff;
-  --color-surface: #0e0e0e;
-  --color-on-surface: #ffffff;
-  --color-surface-bright: #2c2c2c;
-  --color-surface-dim: #0e0e0e;
-  --color-surface-variant: #262626;
-  --color-on-surface-variant: #ababab;
+  /* Cyberpunk Color Palette (Core System Palette with #000000 Dark Base) */
+  --color-background: #000000;
+  --color-on-background: #fdfdfd;
+  --color-surface: #000000;
+  --color-on-surface: #fdfdfd;
+  --color-surface-bright: #222222;
+  --color-surface-dim: #000000;
+  --color-surface-variant: #111111;
+  --color-on-surface-variant: #00f0ff;
   --color-surface-container-lowest: #000000;
-  --color-surface-container-low: #131313;
-  --color-surface-container: #191919;
-  --color-surface-container-high: #1f1f1f;
-  --color-surface-container-highest: #262626;
+  --color-surface-container-low: #0a0a0a;
+  --color-surface-container: #111111;
+  --color-surface-container-high: #161616;
+  --color-surface-container-highest: #1c1c1c;
   
-  --color-primary: #ff8e7d;
-  --color-on-primary: #650000;
-  --color-primary-container: #ff7763;
-  --color-on-primary-container: #4f0000;
-  --color-primary-dim: #eb0000;
+  /* Primary (Neon Cyan #00f0ff) */
+  --color-primary: #00f0ff;
+  --color-on-primary: #001f24;
+  --color-primary-container: #00d9e8;
+  --color-on-primary-container: #001f24;
+  --color-primary-dim: #fcee0a;
   
-  --color-secondary: #e2e2e2;
-  --color-on-secondary: #505252;
-  --color-secondary-container: #454747;
-  --color-on-secondary-container: #d0d0d0;
+  /* Secondary (Neon Magenta / Pink #ff0055) */
+  --color-secondary: #ff0055;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #3d0014;
+  --color-on-secondary-container: #ff99bb;
   
-  --color-tertiary: #ff725e;
-  --color-on-tertiary: #4a0000;
-  --color-tertiary-container: #fe0000;
+  /* Tertiary / Core Accent (David Martinez Acid Neon Yellow #fcee0a) */
+  --color-tertiary: #fff238;
+  --color-on-tertiary: #000000;
+  --color-tertiary-container: #fcee0a;
   --color-on-tertiary-container: #000000;
   
-  --color-error: #ff6e84;
-  --color-on-error: #490013;
-  --color-error-container: #a70138;
-  --color-on-error-container: #ffb2b9;
+  /* Error (Neon Hot Pink / Trauma Glitch) */
+  --color-error: #ff0055;
+  --color-on-error: #ffffff;
+  --color-error-container: #80002b;
+  --color-on-error-container: #ff99bb;
   
-  --color-outline: #757575;
-  --color-outline-variant: #484848;
+  /* Outlines & Highlights (Neon Cyan) */
+  --color-outline: #00f0ff;
+  --color-outline-variant: #00818a;
 
   /* Typography */
-  --font-display: 'Archivo Black', sans-serif;
-  --font-body: 'Inter', sans-serif;
+  --font-display: 'Kode Mono', monospace;
+  --font-body: 'DM Mono', monospace;
+  --font-mono: 'Kode Mono', monospace;
+  --font-zalando: 'Kode Mono', monospace;
+  --font-turret: 'Kode Mono', monospace;
+  --font-circuit: 'Kode Mono', monospace;
+  --font-elons: 'Kode Mono', monospace;
+  --font-warcorp: 'Kode Mono', monospace;
+  --font-kode: 'Kode Mono', monospace;
 
   /* Spacing & Borders */
   --spacing-unit: 8px;
   --border-radius-none: 0px;
 
-  /* Shadows */
-  --shadow-ambient: 0 40px 60px 0 rgba(235, 0, 0, 0.06);
+  /* Shadows & Accents */
+  --shadow-ambient: 0 40px 60px 0 rgba(252, 238, 10, 0.12);
+  --rules-accent-color: #fcee0a;
 }

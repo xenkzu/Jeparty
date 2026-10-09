@@ -41,7 +41,8 @@ const CyberpunkBackground = () => {
           className="absolute left-0 right-0 h-px"
           style={{
             top: `${line.top}%`,
-            background: 'linear-gradient(to right, transparent, rgba(254,0,0,0.2) 30%, rgba(254,0,0,0.2) 70%, transparent)',
+            background: 'linear-gradient(to right, transparent, var(--color-tertiary-container) 30%, var(--color-tertiary-container) 70%, transparent)',
+            opacity: 0.2,
           }}
           animate={{ opacity: [0, 1, 0], scaleX: [0.3, 1, 0.3] }}
           transition={{ duration: line.duration, repeat: Infinity, delay: line.delay, ease: 'easeInOut' }}
@@ -145,11 +146,11 @@ const RulesScreen: React.FC<RulesScreenProps> = () => {
                 <p className="font-body text-xs uppercase tracking-widest mb-2" style={{ color: 'var(--primary, #FFFFFF)' }}>Special Categories</p>
                 <div className="flex gap-4">
                   <div className="flex items-center gap-2">
-                    <span className="font-black px-2 py-0.5" style={{ backgroundColor: 'var(--rules-accent-color, #fe0000)', color: 'white' }}>-V</span>
+                    <span className="font-black px-2 py-0.5" style={{ backgroundColor: 'var(--rules-accent-color, #fe0000)', color: 'var(--color-on-tertiary-container, #000000)' }}>-V</span>
                     <span className="text-xs uppercase">IMAGE QUESTION</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="font-black px-2 py-0.5" style={{ backgroundColor: 'var(--rules-accent-color, #fe0000)', color: 'white' }}>-A</span>
+                    <span className="font-black px-2 py-0.5" style={{ backgroundColor: 'var(--rules-accent-color, #fe0000)', color: 'var(--color-on-tertiary-container, #000000)' }}>-A</span>
                     <span className="text-xs uppercase">AUDIO QUESTION</span>
                   </div>
                 </div>
@@ -163,6 +164,10 @@ const RulesScreen: React.FC<RulesScreenProps> = () => {
                     </tr>
                   </thead>
                   <tbody>
+                    <tr className="border-t border-white/5">
+                      <td className="p-2">THEME</td>
+                      <td className="p-2">CYBER_RED / EDGERUNNERS</td>
+                    </tr>
                     <tr className="border-t border-white/5">
                       <td className="p-2">DIFFICULTY</td>
                       <td className="p-2">EASY / MEDIUM / HARD</td>
@@ -183,7 +188,7 @@ const RulesScreen: React.FC<RulesScreenProps> = () => {
             {/* Section 2: The Board */}
             <div 
               className="md:col-span-5 p-10 flex flex-col justify-between transition-all"
-              style={{ backgroundColor: 'var(--rules-accent-color, #fe0000)', color: 'white' }}
+              style={{ backgroundColor: 'var(--rules-accent-color, #fe0000)', color: 'var(--color-on-tertiary-container, #000000)' }}
             >
               <TechBracket position="bl" className="bottom-2 left-2" />
               <TechBracket position="br" className="bottom-2 right-2" />

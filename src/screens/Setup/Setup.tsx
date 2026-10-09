@@ -57,9 +57,10 @@ const CyberpunkBackground = () => {
           className="absolute left-0 right-0 h-px"
           style={{
             top: `${line.top}%`,
-            background: 'linear-gradient(to right, transparent, rgba(254,0,0,0.15) 30%, rgba(254,0,0,0.15) 70%, transparent)',
+            background: 'linear-gradient(to right, transparent, var(--color-tertiary-container) 30%, var(--color-tertiary-container) 70%, transparent)',
+            opacity: 0.15,
           }}
-          animate={{ opacity: [0, 1, 0], scaleX: [0.3, 1, 0.3] }}
+          animate={{ opacity: [0, 0.25, 0], scaleX: [0.3, 1, 0.3] }}
           transition={{ duration: line.duration, repeat: Infinity, delay: line.delay, ease: 'easeInOut' }}
         />
       ))}
@@ -71,9 +72,10 @@ const CyberpunkBackground = () => {
           className="absolute top-0 bottom-0 w-px"
           style={{
             left: `${line.left}%`,
-            background: 'linear-gradient(to bottom, transparent, rgba(254,0,0,0.08) 40%, rgba(254,0,0,0.08) 60%, transparent)',
+            background: 'linear-gradient(to bottom, transparent, var(--color-tertiary-container) 40%, var(--color-tertiary-container) 60%, transparent)',
+            opacity: 0.1,
           }}
-          animate={{ opacity: [0, 1, 0] }}
+          animate={{ opacity: [0, 0.15, 0] }}
           transition={{ duration: line.duration, repeat: Infinity, delay: line.delay, ease: 'easeInOut' }}
         />
       ))}

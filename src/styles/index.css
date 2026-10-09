@@ -1,12 +1,61 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kode+Mono:wght@400..700&family=Turret+Road:wght@200;300;400;500;700;800&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Zalando+Sans+Expanded:ital,wght@0,200..900;1,200..900&family=Archivo+Black&family=Inter:wght@400;700;900&display=swap');
 @import './tokens.css';
 
 @import "tailwindcss/base";
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+/* Warcorp Custom Font */
+@font-face {
+  font-family: 'Warcorp';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/warcorp-font/Warcorp-LVdBD.otf') format('opentype'),
+       url('/warcorp-font/Warcorp-XGOPj.ttf') format('truetype');
+}
+
+/* Elons Custom Font */
+@font-face {
+  font-family: 'Elons';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/elons-font/ElonsRegular-9Mw6n.ttf') format('truetype');
+}
+
+/* Circuit Forem Custom Font */
+@font-face {
+  font-family: 'Circuit Forem';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('/circuit-forem-font/CircuitForemRegular-zr2n1.otf') format('opentype');
+}
+
+/* Direct Font Face for guaranteed Zalando Sans Expanded loading */
+@font-face {
+  font-family: 'Zalando Sans Expanded';
+  font-style: normal;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/zalandosansexpanded/v3/JTU6jJci8Cy470GaeFwsix1hi3aTmrgRwU-ZoGTKmeLvpK-4ONiPl40.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Zalando Sans Expanded';
+  font-style: italic;
+  font-weight: 200 900;
+  font-display: swap;
+  src: url('https://fonts.gstatic.com/s/zalandosansexpanded/v3/JTU4jJci8Cy470GaeFwsix1hi3aTmrgRwU-zqVY1QYuEPgG_LbnL1slrdw.ttf') format('truetype');
+}
+
 :root {
   color-scheme: dark;
+}
+
+html {
+  zoom: 0.9;
+  height: 100%;
 }
 
 html, body, * {
@@ -22,6 +71,7 @@ body::-webkit-scrollbar,
 
 body {
   margin: 0;
+  height: 100%;
   background-color: var(--color-background);
   color: var(--color-on-background);
   font-family: var(--font-body);
@@ -29,9 +79,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+input, button, textarea, select {
+  font-family: inherit;
+}
+
 #root {
   width: 100%;
-  min-height: 100vh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.font-zalando {
+  font-family: 'Zalando Sans Expanded', sans-serif !important;
+}
+
+.font-mono-custom {
+  font-family: 'DM Mono', monospace !important;
 }
 
 /* Cyberpunk Animations */

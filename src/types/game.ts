@@ -1,9 +1,11 @@
+export type Screen = 'SETUP' | 'GAME' | 'QUESTION' | 'END' | 'RULES';
+
 export interface GameSettings {
   difficulty: 'easy' | 'medium' | 'hard';
   timeLimit: 30 | 60 | 0;
   questionsPerCategory: 3 | 5 | 7;
   scoringMode: ScoringMode;
-  uiVersion: 'v1' | 'v2';
+  uiVersion: 'v1' | 'v2' | 'v3';
 }
 
 export interface SkipChain {

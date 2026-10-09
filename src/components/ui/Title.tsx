@@ -4,12 +4,15 @@ interface TitleProps {
   children: React.ReactNode;
   className?: string;
   as?: 'h1' | 'h2' | 'h3';
+  style?: React.CSSProperties;
 }
 
-const Title: React.FC<TitleProps> = ({ children, className = '', as: Component = 'h1' }) => {
-  // Using Archivo Black (font-display) with aggressive tracking and sizing
+const Title: React.FC<TitleProps> = ({ children, className = '', as: Component = 'h1', style }) => {
   return (
-    <Component className={`font-display text-display-lg font-bold text-on-surface uppercase ${className}`}>
+    <Component 
+      style={{ fontFamily: "'Zalando Sans Expanded', sans-serif", ...style }}
+      className={`font-zalando font-black text-on-surface uppercase tracking-tight ${className}`}
+    >
       {children}
     </Component>
   );

@@ -64,8 +64,15 @@ export default {
         },
       },
       fontFamily: {
-        display: ['var(--font-display)'],
-        body: ['var(--font-body)'],
+        display: ['"Kode Mono"', 'var(--font-display)', 'monospace'],
+        body: ['"DM Mono"', 'var(--font-body)', 'monospace'],
+        mono: ['"Kode Mono"', 'var(--font-mono)', 'monospace'],
+        zalando: ['"Kode Mono"', 'var(--font-zalando)', 'monospace'],
+        turret: ['"Kode Mono"', 'var(--font-turret)', 'monospace'],
+        circuit: ['"Kode Mono"', 'var(--font-circuit)', 'monospace'],
+        elons: ['"Kode Mono"', 'var(--font-elons)', 'monospace'],
+        warcorp: ['"Kode Mono"', 'var(--font-warcorp)', 'monospace'],
+        kode: ['"Kode Mono"', 'var(--font-kode)', 'monospace'],
       },
       boxShadow: {
         'ambient': 'var(--shadow-ambient)',
@@ -105,12 +112,12 @@ export default {
           '97%': { opacity: '1' },
         },
         'rgb-split': {
-          '0%, 100%': { textShadow: '2px 0 #fe0000, -2px 0 #00ffff' },
-          '50%': { textShadow: '-2px 0 #fe0000, 2px 0 #00ffff' },
+          '0%, 100%': { textShadow: '2px 0 var(--color-tertiary-container), -2px 0 var(--color-primary)' },
+          '50%': { textShadow: '-2px 0 var(--color-tertiary-container), 2px 0 var(--color-primary)' },
         },
         'border-pulse': {
-          '0%, 100%': { borderColor: 'rgba(254, 0, 0, 0.4)' },
-          '50%': { borderColor: 'rgba(254, 0, 0, 1)' },
+          '0%, 100%': { borderColor: 'var(--color-tertiary-container)' },
+          '50%': { borderColor: 'var(--color-primary)' },
         },
         'slide-in-left': {
           '0%': { transform: 'translateX(-100%)', opacity: '0' },
@@ -130,7 +137,7 @@ export default {
         },
         'score-pop': {
           '0%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.15)', color: '#fe0000' },
+          '50%': { transform: 'scale(1.15)', color: 'var(--color-tertiary-container)' },
           '100%': { transform: 'scale(1)' },
         },
         'btn-press': {

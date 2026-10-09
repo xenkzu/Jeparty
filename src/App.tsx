@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Logo } from './components/ui/Logo';
+import { Navbar } from './components/ui/Navbar';
 import Setup from './screens/Setup/Setup';
 import GameBoard from './screens/GameBoard/GameBoard';
 import QuestionModal from './screens/QuestionModal/QuestionModal';
@@ -10,54 +10,36 @@ import RulesScreen from './screens/RulesScreen/RulesScreen';
 import { generateBoard, generateNewAudioQuestion } from './services/aiService';
 import { prefetchBoardImages } from './services/imageService';
 import { prefetchBoardAudio, clearAudioCache } from './services/audioService';
-import { Game, GameSettings } from './types/game';
+import { Game, GameSettings, Screen } from './types/game';
 import { saveGame, loadGame, clearGame } from './services/persistenceService';
 import SetupV1 from './screens/v1/SetupV1';
 import GameBoardV1 from './screens/v1/GameBoardV1';
 import QuestionModalV1 from './screens/v1/QuestionModalV1';
 import EndScreenV1 from './screens/v1/EndScreenV1';
+import SetupV3 from './screens/v3/SetupV3';
+import GameBoardV3 from './screens/v3/GameBoardV3';
+import QuestionModalV3 from './screens/v3/QuestionModalV3';
+import EndScreenV3 from './screens/v3/EndScreenV3';
+import { CyberpunkPreloader } from './components/ui/CyberpunkPreloader';
+import { GeneratingBoardGlitch } from './components/ui/GeneratingBoardGlitch';
+import { CyberViewportFrame } from './components/ui/CyberViewportFrame';
+
+const SETTINGS_STORAGE_KEY = 'jeparty_settings_v1';
 
 const DEFAULT_SETTINGS: GameSettings = {
   difficulty: 'medium',
   timeLimit: 60,
   questionsPerCategory: 5,
   scoringMode: 'normal',
-  uiVersion: 'v2',
+  uiVersion: 'v3',
 };
 
-const FooterVisualizer = () => {
-  const [isHovered, setIsHovered] = useState(false);
-  // Generate stable random idle heights once
-  const [idleHeights] = useState(() => [...Array(120)].map(() => 4 + Math.random() * 20));
-
-  return (
-    <div
-      className="flex items-center gap-[2px] group cursor-crosshair h-20"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {idleHeights.map((idleH, i) => (
-        <motion.div
-          key={i}
-          className="w-[2px] bg-[#222222] group-hover:bg-tertiary-container transition-all duration-500 shadow-[0_0_8px_rgba(254,0,0,0)] group-hover:shadow-[0_0_12px_rgba(254,0,0,0.5)]"
-          initial={{ height: idleH, opacity: 0.2 }}
-          animate={isHovered ? {
-            height: [idleH, idleH + 40, idleH + 10, idleH + 50, idleH],
-            opacity: [0.3, 1, 0.4, 1, 0.3]
-          } : {
-            height: idleH,
-            opacity: 0.2
-          }}
-          transition={{
-            duration: 1.5 + (Math.random() * 1),
-            repeat: isHovered ? Infinity : 0,
-            delay: isHovered ? (i * 0.01) : 0,
-            ease: "easeInOut"
-          }}
-        />
-      ))}
-    </div>
-  );
+const getStoredSettings = (): GameSettings => {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+  } catch {}
+  return DEFAULT_SETTINGS;
 };
 
 function OptionButton({ label, sub, selected, onClick, groupId }: { label: string; sub?: string; selected: boolean; onClick: () => void; groupId: string }) {
@@ -68,23 +50,21 @@ function OptionButton({ label, sub, selected, onClick, groupId }: { label: strin
       onClick={onClick}
       className={`relative flex-1 py-3 px-4 text-left transition-all duration-200 border ${selected
         ? 'text-tertiary-container border-tertiary-container'
-        : 'bg-[#111111] text-white/50 border-[#333333] hover:border-white/30 hover:bg-[#1a1a1a] hover:text-white/80'
+        : 'bg-[#000000] text-white/50 border-[#333333] hover:border-white/30 hover:bg-[#1a1a1a] hover:text-white/80'
         }`}
     >
       {selected && (
         <motion.div
           layoutId={`settings-slider-${groupId}`}
-          className="absolute inset-0 bg-tertiary-container/10 shadow-[inset_4px_0_0_0_#eb0000] pointer-events-none"
+          className="absolute inset-0 bg-tertiary-container/10 shadow-[inset_4px_0_0_0_var(--color-primary-dim)] pointer-events-none"
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
-      <span className="relative z-10 font-display font-bold text-sm uppercase tracking-widest block leading-tight">{label}</span>
-      {sub && <span className="relative z-10 font-body text-xs tracking-[0.1em] opacity-60 mt-1 block">{sub}</span>}
+      <span className="relative z-10 font-mono font-bold text-xs uppercase tracking-widest block leading-tight">{label}</span>
+      {sub && <span className="relative z-10 font-mono text-[10px] tracking-[0.1em] opacity-60 mt-1 block">{sub}</span>}
     </motion.button>
   );
 }
-
-type Screen = 'SETUP' | 'GAME' | 'QUESTION' | 'END' | 'RULES';
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('SETUP');
@@ -101,10 +81,22 @@ function App() {
   const [loadingData, setLoadingData] = useState<{ players: string[], categories: string[] } | null>(null);
   const [loadingError, setLoadingError] = useState<string | null>(null);
 
-  // Settings state — lives in App so cog button can open it from anywhere
-  const [settings, setSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
+  // Settings state — initialized with persisted user preferences
+  const [settings, setSettings] = useState<GameSettings>(getStoredSettings);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [pendingSettings, setPendingSettings] = useState<GameSettings>(DEFAULT_SETTINGS);
+  const [pendingSettings, setPendingSettings] = useState<GameSettings>(getStoredSettings);
+  const [showPreloader, setShowPreloader] = useState(settings.uiVersion === 'v3');
+
+  const handleSaveSettings = (newSettings: GameSettings) => {
+    if (newSettings.uiVersion === 'v3' && settings.uiVersion !== 'v3') {
+      setShowPreloader(true);
+    }
+    setSettings(newSettings);
+    try {
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(newSettings));
+    } catch {}
+    setSettingsOpen(false);
+  };
 
   const [navVisible, setNavVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -464,7 +456,7 @@ function App() {
               duration: 0.6, 
               ease: [0.16, 1, 0.3, 1]
             }}
-            className="fixed inset-0 z-[999999] bg-[#0A0A0A]"
+            className="fixed inset-0 z-[999999] bg-[#000000]"
           >
             {/* Rapid Scanline Background during transition */}
             <motion.div 
@@ -504,6 +496,65 @@ function App() {
                   setGameState(gs => gs ? { ...gs, currentQuestion: null } : null);
                   navigateTo('GAME');
                 }}
+              />
+            ) : settings.uiVersion === 'v3' ? (
+              <QuestionModalV3
+                question={{ ...currentQuestion }}
+                categoryName={gs.board[categoryIndex].category}
+                activePlayer={activePlayer}
+                isUnderdog={isUnderdog}
+                scoringMode={gs.scoringMode}
+                timeLimit={isInSkipChain ? 0 : (gs.settings?.timeLimit ?? 0)}
+                isInSkipChain={isInSkipChain}
+                skipChainOriginalPlayer={isInSkipChain
+                  ? gs.players[gs.skipChain!.originalPlayerIndex].name
+                  : null}
+                onCorrect={() => {
+                  if (isInSkipChain) {
+                    handleSkipChainCorrect(categoryIndex, questionIndex);
+                  } else {
+                    const multiplier = isUnderdog ? 1.5 : 1;
+                    updateScoreAndStatus(categoryIndex, questionIndex, currentQuestion.value * multiplier);
+                  }
+                }}
+                onWrong={() => {
+                  if (isInSkipChain) {
+                    handleSkipChainWrong(categoryIndex, questionIndex);
+                  } else {
+                    const penalty = gs.scoringMode === 'normal'
+                      ? currentQuestion.value
+                      : currentQuestion.value * 0.75;
+                    updateScoreAndStatus(categoryIndex, questionIndex, -penalty);
+                  }
+                }}
+                onPass={() => handlePass(categoryIndex, questionIndex)}
+                onForceReveal={() => {
+                  // Host force-reveal — mark answered, next turn = player after original passer
+                  const nextTurn = isInSkipChain
+                    ? (gs.skipChain!.originalPlayerIndex + 1) % gs.players.length
+                    : (gs.turnIndex + 1) % gs.players.length;
+                  const newBoard = gs.board.map((cat, ci) =>
+                    ci !== categoryIndex ? cat : {
+                      ...cat,
+                      questions: cat.questions.map((q, qi) =>
+                        qi !== questionIndex ? q : { ...q, status: 'answered' as const }
+                      )
+                    }
+                  );
+                  setGameState({
+                    ...gs,
+                    board: newBoard,
+                    currentQuestion: null,
+                    skipChain: null,
+                    turnIndex: nextTurn,
+                  });
+                  navigateTo('GAME');
+                }}
+                onClose={() => {
+                  setGameState(gs => gs ? { ...gs, currentQuestion: null, skipChain: null } : null);
+                  navigateTo('GAME');
+                }}
+                onRefreshAudio={handleRefreshAudio}
               />
             ) : (
               <QuestionModal
@@ -573,8 +624,17 @@ function App() {
   };
 
   const renderScreen = () => {
-    // Logic Wiring: Fullscreen loading state using existing aesthetics
+    // Fullscreen loading state: Use Cyberpunk Generating Board Glitch for v3
     if (isLoading) {
+      if (settings.uiVersion === 'v3') {
+        return (
+          <GeneratingBoardGlitch
+            categories={loadingData?.categories}
+            players={loadingData?.players}
+          />
+        );
+      }
+
       const qCount = settings.questionsPerCategory || 5;
       const cats = loadingData?.categories || ['CATEGORY 1', 'CATEGORY 2', 'CATEGORY 3', 'CATEGORY 4', 'CATEGORY 5'];
       const players = loadingData?.players || ['PLAYER 1', 'PLAYER 2', 'PLAYER 3'];
@@ -662,15 +722,21 @@ function App() {
 
     switch (currentScreen) {
       case 'SETUP':
-        return settings.uiVersion === 'v1' 
-          ? <SetupV1 onStart={handleStart} onOpenSettings={() => setSettingsOpen(true)} currentSettings={settings} />
-          : <Setup onStart={handleStart} onOpenSettings={() => setSettingsOpen(true)} currentSettings={settings} />;
+        if (settings.uiVersion === 'v1') {
+          return <SetupV1 onStart={handleStart} onOpenSettings={() => setSettingsOpen(true)} currentSettings={settings} />;
+        }
+        if (settings.uiVersion === 'v3') {
+          return <SetupV3 onStart={handleStart} onOpenSettings={() => setSettingsOpen(true)} currentSettings={settings} />;
+        }
+        return <Setup onStart={handleStart} onOpenSettings={() => setSettingsOpen(true)} currentSettings={settings} />;
       case 'GAME':
-        if (!gameState) return settings.uiVersion === 'v1' 
-          ? <SetupV1 onStart={handleStart} currentSettings={settings} />
-          : <Setup onStart={handleStart} currentSettings={settings} />;
-        return settings.uiVersion === 'v1'
-          ? (
+        if (!gameState) {
+          if (settings.uiVersion === 'v1') return <SetupV1 onStart={handleStart} currentSettings={settings} />;
+          if (settings.uiVersion === 'v3') return <SetupV3 onStart={handleStart} currentSettings={settings} />;
+          return <Setup onStart={handleStart} currentSettings={settings} />;
+        }
+        if (settings.uiVersion === 'v1') {
+          return (
             <GameBoardV1
               game={gameState}
               onSelectQuestion={(categoryIndex, questionIndex) => {
@@ -682,9 +748,11 @@ function App() {
               }}
               onEndGame={() => { clearGame(); navigateTo('END'); }}
             />
-          )
-          : (
-            <GameBoard
+          );
+        }
+        if (settings.uiVersion === 'v3') {
+          return (
+            <GameBoardV3
               game={gameState}
               onSelectQuestion={(categoryIndex, questionIndex) => {
                 setGameState({
@@ -696,13 +764,29 @@ function App() {
               onEndGame={() => { clearGame(); navigateTo('END'); }}
             />
           );
+        }
+        return (
+          <GameBoard
+            game={gameState}
+            onSelectQuestion={(categoryIndex, questionIndex) => {
+              setGameState({
+                ...gameState,
+                currentQuestion: { categoryIndex, questionIndex }
+              });
+              navigateTo('QUESTION');
+            }}
+            onEndGame={() => { clearGame(); navigateTo('END'); }}
+          />
+        );
       case 'QUESTION':
         // Modal is rendered via portal at the App root — return the board underneath
-        if (!gameState) return settings.uiVersion === 'v1'
-          ? <SetupV1 onStart={handleStart} currentSettings={settings} />
-          : <Setup onStart={handleStart} currentSettings={settings} />;
-        return settings.uiVersion === 'v1'
-          ? (
+        if (!gameState) {
+          if (settings.uiVersion === 'v1') return <SetupV1 onStart={handleStart} currentSettings={settings} />;
+          if (settings.uiVersion === 'v3') return <SetupV3 onStart={handleStart} currentSettings={settings} />;
+          return <Setup onStart={handleStart} currentSettings={settings} />;
+        }
+        if (settings.uiVersion === 'v1') {
+          return (
             <GameBoardV1
               game={gameState}
               onSelectQuestion={(categoryIndex, questionIndex) => {
@@ -711,9 +795,11 @@ function App() {
               }}
               onEndGame={() => { clearGame(); navigateTo('END'); }}
             />
-          )
-          : (
-            <GameBoard
+          );
+        }
+        if (settings.uiVersion === 'v3') {
+          return (
+            <GameBoardV3
               game={gameState}
               onSelectQuestion={(categoryIndex, questionIndex) => {
                 setGameState({ ...gameState, currentQuestion: { categoryIndex, questionIndex } });
@@ -722,14 +808,27 @@ function App() {
               onEndGame={() => { clearGame(); navigateTo('END'); }}
             />
           );
+        }
+        return (
+          <GameBoard
+            game={gameState}
+            onSelectQuestion={(categoryIndex, questionIndex) => {
+              setGameState({ ...gameState, currentQuestion: { categoryIndex, questionIndex } });
+              navigateTo('QUESTION');
+            }}
+            onEndGame={() => { clearGame(); navigateTo('END'); }}
+          />
+        );
       case 'RULES':
         return <RulesScreen />;
       case 'END':
-        if (!gameState) return settings.uiVersion === 'v1'
-          ? <SetupV1 onStart={handleStart} currentSettings={settings} />
-          : <Setup onStart={handleStart} currentSettings={settings} />;
-        return settings.uiVersion === 'v1'
-          ? (
+        if (!gameState) {
+          if (settings.uiVersion === 'v1') return <SetupV1 onStart={handleStart} currentSettings={settings} />;
+          if (settings.uiVersion === 'v3') return <SetupV3 onStart={handleStart} currentSettings={settings} />;
+          return <Setup onStart={handleStart} currentSettings={settings} />;
+        }
+        if (settings.uiVersion === 'v1') {
+          return (
             <EndScreenV1
               players={gameState.players}
               onRestart={() => {
@@ -740,9 +839,11 @@ function App() {
                 navigateTo('SETUP');
               }}
             />
-          )
-          : (
-            <EndScreen
+          );
+        }
+        if (settings.uiVersion === 'v3') {
+          return (
+            <EndScreenV3
               players={gameState.players}
               onRestart={() => {
                 clearGame();
@@ -753,6 +854,19 @@ function App() {
               }}
             />
           );
+        }
+        return (
+          <EndScreen
+            players={gameState.players}
+            onRestart={() => {
+              clearGame();
+              setGameState(null);
+              setLoadingError(null);
+              setIsLoading(false);
+              navigateTo('SETUP');
+            }}
+          />
+        );
       default:
         return <div>Error loading game state.</div>;
     }
@@ -760,7 +874,7 @@ function App() {
 
   return (
     <>
-      <div className="h-screen w-full flex flex-col bg-surface-container-lowest text-on-surface overflow-hidden font-body">
+      <div className="h-full w-full flex flex-col bg-surface-container-lowest text-on-surface overflow-hidden font-body">
 
         {/* Global Settings Modal */}
         <AnimatePresence>
@@ -788,19 +902,19 @@ function App() {
                 className="relative bg-[#0D0D0D] border-t-2 border-tertiary-container w-full max-w-lg p-8 flex flex-col gap-8"
               >
                 {/* Decorative Elements */}
-                <div className="absolute top-0 left-0 w-20 h-0.5 bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"></div>
-                <div className="absolute bottom-0 right-0 w-32 h-0.5 bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"></div>
+                <div className="absolute top-0 left-0 w-20 h-0.5 bg-tertiary-container shadow-[0_0_10px_var(--color-tertiary-container)]"></div>
+                <div className="absolute bottom-0 right-0 w-32 h-0.5 bg-tertiary-container shadow-[0_0_10px_var(--color-tertiary-container)]"></div>
 
                 <motion.div variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}>
-                  <h2 className="font-display font-black text-3xl tracking-tight text-white uppercase flex items-center gap-4">
-                    <span className="material-symbols-outlined text-tertiary-container text-3xl">settings_system_daydream</span>
+                  <h2 className="font-zalando font-black text-2xl tracking-tight text-white uppercase flex items-center gap-3">
+                    <span className="material-symbols-outlined text-tertiary-container text-2xl">settings_system_daydream</span>
                     SYSTEM_CONFIG
                   </h2>
                 </motion.div>
 
-                <div className="flex flex-col gap-5 w-full">
+                <div className="flex flex-col gap-5 w-full font-mono">
                   <motion.div variants={{ hidden: { opacity: 0, y: 5 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
-                    <span className="text-xs font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Difficulty</span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#666666]">Difficulty</span>
                     <div className="flex gap-3">
                       <OptionButton groupId="difficulty" label="EASY" sub="Common" selected={pendingSettings.difficulty === 'easy'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'easy' }))} />
                       <OptionButton groupId="difficulty" label="MEDIUM" sub="Expertise" selected={pendingSettings.difficulty === 'medium'} onClick={() => setPendingSettings(s => ({ ...s, difficulty: 'medium' }))} />
@@ -809,7 +923,7 @@ function App() {
                   </motion.div>
 
                   <motion.div variants={{ hidden: { opacity: 0, y: 5 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
-                    <span className="text-xs font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Time Limit</span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#666666]">Time Limit</span>
                     <div className="flex gap-3">
                       <OptionButton groupId="timer" label="30S" selected={pendingSettings.timeLimit === 30} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 30 }))} />
                       <OptionButton groupId="timer" label="60S" selected={pendingSettings.timeLimit === 60} onClick={() => setPendingSettings(s => ({ ...s, timeLimit: 60 }))} />
@@ -818,7 +932,7 @@ function App() {
                   </motion.div>
 
                   <motion.div variants={{ hidden: { opacity: 0, y: 5 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
-                    <span className="text-xs font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Questions Per Category</span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#666666]">Questions Per Category</span>
                     <div className="flex gap-3">
                       <OptionButton groupId="questions" label="3" selected={pendingSettings.questionsPerCategory === 3} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 3 }))} />
                       <OptionButton groupId="questions" label="5" selected={pendingSettings.questionsPerCategory === 5} onClick={() => setPendingSettings(s => ({ ...s, questionsPerCategory: 5 }))} />
@@ -827,7 +941,7 @@ function App() {
                   </motion.div>
 
                   <motion.div variants={{ hidden: { opacity: 0, y: 5 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
-                    <span className="text-xs font-display font-bold uppercase tracking-[0.2em] text-[#666666]">Scoring Mode</span>
+                    <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#666666]">Scoring Mode</span>
                     <div className="flex gap-3">
                       <OptionButton groupId="scoring" label="STANDARD" sub="Persistent" selected={pendingSettings.scoringMode === 'normal'} onClick={() => setPendingSettings(s => ({ ...s, scoringMode: 'normal' }))} />
                       <OptionButton groupId="scoring" label="ADVANCED" sub="Permadeath" selected={pendingSettings.scoringMode === 'advanced'} onClick={() => setPendingSettings(s => ({ ...s, scoringMode: 'advanced' }))} />
@@ -835,28 +949,29 @@ function App() {
                   </motion.div>
 
                   <motion.div variants={{ hidden: { opacity: 0, y: 5 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
-                    <span className="text-xs font-display font-bold uppercase tracking-[0.2em] text-[#666666]">UI Version</span>
-                    <div className="flex gap-3">
+                    <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#666666]">UI Version</span>
+                    <div className="flex gap-3 flex-wrap">
                       <OptionButton groupId="ui" label="V1_CLASSIC" sub="Cyberpunk" selected={pendingSettings.uiVersion === 'v1'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v1' }))} />
                       <OptionButton groupId="ui" label="V2_MODERN" sub="Aesthetic" selected={pendingSettings.uiVersion === 'v2'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v2' }))} />
+                      <OptionButton groupId="ui" label="V3_ULTRA" sub="Next Gen" selected={pendingSettings.uiVersion === 'v3'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v3' }))} />
                     </div>
                   </motion.div>
                 </div>
 
-                <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="flex gap-4 mt-2">
+                <motion.div variants={{ hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0 } }} className="flex gap-4 mt-2 font-mono">
                   <motion.button
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSettingsOpen(false)}
-                    className="flex-none px-8 py-4 border border-[#333333] text-white/40 font-display font-bold text-sm tracking-widest uppercase hover:border-white/30 hover:text-white transition-colors"
+                    className="flex-none px-8 py-4 border border-[#333333] text-white/40 font-mono font-bold text-xs tracking-widest uppercase hover:border-white/30 hover:text-white transition-colors"
                   >
                     ABORT
                   </motion.button>
                   <motion.button
                     whileHover={{ y: -2 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={() => { setSettings(pendingSettings); setSettingsOpen(false); }}
-                    className="flex-1 bg-tertiary-container hover:bg-white text-black font-display font-bold text-sm tracking-widest uppercase py-4 transition-colors [clip-path:polygon(0_0,100%_0,95%_100%,0%_100%)] flex items-center justify-center gap-2"
+                    onClick={() => handleSaveSettings(pendingSettings)}
+                    className="flex-1 bg-tertiary-container hover:bg-white text-black font-mono font-bold text-xs tracking-widest uppercase py-4 transition-colors [clip-path:polygon(0_0,100%_0,95%_100%,0%_100%)] flex items-center justify-center gap-2"
                   >
                     SAVE_CONFIG
                   </motion.button>
@@ -866,130 +981,52 @@ function App() {
           )}
         </AnimatePresence>
 
-        {/* Top Navbar */}
-        <motion.nav
-          animate={{ y: navVisible ? 0 : -100 }}
-          transition={{ duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-          className="w-full bg-[#0e0e0e] fixed top-0 z-50 border-b-4 border-tertiary-container shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
-        >
-          <div className="flex flex-col md:flex-row justify-between items-center px-6 py-4 gap-4">
-            {/* Left Section: Logo + Tabs */}
-            <div className="flex items-center gap-12">
-              <div
-                onClick={() => navigateTo('SETUP')}
-                className="h-10 cursor-pointer hover:animate-glitch transition-all group pr-8 border-r border-[#1a1a1a]"
-              >
-                <Logo className="h-full w-auto text-white group-hover:text-tertiary-container transition-colors origin-left scale-x-[1.1]" />
-              </div>
-            <div className="flex items-center bg-[#131313] p-1 gap-1 overflow-hidden">
-                {[
-                  { id: 'GAME', label: 'BOARD', icon: 'grid_view', screens: ['GAME', 'QUESTION'] },
-                  { id: 'SETUP', label: 'PLAYERS', icon: 'groups', screens: ['SETUP'] },
-                  { id: 'RULES', label: 'RULES', icon: 'gavel', screens: ['RULES', 'END'] },
-                ].map((tab) => {
-                  const isActive = tab.screens.includes(currentScreen);
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => navigateTo(tab.id as Screen)}
-                      className="relative px-6 py-2 font-sans font-black uppercase tracking-[0.1em] text-[10px] flex items-center gap-2 transition-all group"
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="nav-selection"
-                          className="absolute inset-0 bg-tertiary-container nav-clip z-0"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                        />
-                      )}
-                      <span className={`relative z-10 flex items-center gap-2 transition-colors ${isActive ? 'text-black' : 'text-white group-hover:text-white/80'}`}>
-                        <span className="material-symbols-outlined text-sm">{tab.icon}</span>
-                        {tab.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+        {/* Cyberpunk Edgerunners Preloader */}
+        <AnimatePresence>
+          {showPreloader && settings.uiVersion === 'v3' && (
+            <CyberpunkPreloader onComplete={() => setShowPreloader(false)} />
+          )}
+        </AnimatePresence>
 
-            {/* Right Actions */}
-            <div className="flex items-center gap-4">
-              <div className="h-8 w-px bg-[#1a1a1a] mx-2 hidden md:block"></div>
-              <div className="flex items-center gap-4">
-                <button className="text-tertiary-container hover:text-white transition-colors">
-                  <span className="material-symbols-outlined text-xl">leaderboard</span>
-                </button>
-                <button
-                  onClick={() => { setPendingSettings(settings); setSettingsOpen(true); }}
-                  className="text-tertiary-container hover:text-white transition-colors"
-                >
-                  <span className="material-symbols-outlined text-xl">settings</span>
-                </button>
-                <button
-                  onClick={() => { clearGame(); setGameState(null); navigateTo('SETUP'); }}
-                  className="bg-tertiary-container text-black px-6 py-2 font-sans font-black text-[10px] uppercase hover:bg-white transition-all btn-riot"
-                >
-                  NEW GAME
-                </button>
-              </div>
-            </div>
-          </div>
-        </motion.nav>
+        {/* Top Navbar (Figma-inspired hanging notch shape) */}
+        {(!showPreloader || settings.uiVersion !== 'v3') && (
+          <Navbar
+            currentScreen={currentScreen}
+            navVisible={navVisible}
+            onNavigate={(screen) => navigateTo(screen)}
+            onOpenSettings={() => { setPendingSettings(settings); setSettingsOpen(true); }}
+            onNewGame={() => { clearGame(); setGameState(null); navigateTo('SETUP'); }}
+            onOpenLeaderboard={() => {}}
+          />
+        )}
 
-
+        {/* CyberCN Viewport Edge Frame for V3 Setup */}
+        {(!showPreloader || settings.uiVersion !== 'v3') && settings.uiVersion === 'v3' && currentScreen === 'SETUP' && (
+          <CyberViewportFrame />
+        )}
 
         {/* Main Body — Sidebar Removed */}
         <div className="flex-1 overflow-hidden flex relative">
 
-          {/* Scrollable Main Area (Where Setup Lives) */}
-          <main id="main-scroll-area" className="flex-1 h-full overflow-y-auto overflow-x-hidden bg-[#0A0A0A] relative flex flex-col pt-20">
-            <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-12 pt-4 lg:pt-8 flex-1 flex flex-col">
+          {/* Main Area: Non-scrollable on SETUP, scrollable on other pages */}
+          {(!showPreloader || settings.uiVersion !== 'v3') && (
+            <main 
+              id="main-scroll-area" 
+              className={`flex-1 h-full min-h-0 ${
+                currentScreen === 'SETUP' ? 'overflow-hidden' : 'overflow-y-auto'
+              } bg-[#000000] relative flex flex-col pt-24 sm:pt-28`}
+            >
+              <div className="w-full max-w-[1680px] mx-auto px-8 sm:px-14 md:px-20 lg:px-28 xl:px-36 pt-4 lg:pt-6 flex-1 flex flex-col justify-start">
 
-              {/* Inject Active Screen Component */}
-              <AnimatePresence mode="wait">
-                <div key={currentScreen} className="flex-1 flex flex-col">
-                  {renderScreen()}
-                </div>
-              </AnimatePresence>
-            </div>
-
-            {/* Global Footer (Deconstructed & Minimally Integrated) */}
-            <footer className="mt-20 w-full bg-transparent">
-              <div className="w-full px-8 py-10 flex flex-col md:flex-row justify-between items-center gap-8">
-                {/* Left: Identity & Status */}
-                <div className="flex flex-col gap-2 items-center md:items-start text-center md:text-left">
-                  <div className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-tertiary-container animate-pulse shadow-[0_0_8px_rgba(254,0,0,0.6)]"></div>
-                    <span className="text-[9px] font-display font-bold tracking-[0.2em] uppercase text-[#444444]">SYS_OP: ACTIVE</span>
+                {/* Inject Active Screen Component */}
+                <AnimatePresence mode="wait">
+                  <div key={currentScreen} className="flex-1 flex flex-col">
+                    {renderScreen()}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-white/20 font-display text-sm tracking-tighter uppercase italic">Jeparty_OS</span>
-                    <div className="w-1 h-1 rounded-full bg-[#222222]"></div>
-                    <span className="text-[10px] font-body font-bold tracking-[0.1em] uppercase text-tertiary-container/60">
-                      BY YASH KAUL
-                    </span>
-                  </div>
-                </div>
-
-                {/* Center: Interactive Visualizer (Slimmer) */}
-                <div className="hidden lg:flex flex-col items-center gap-2 group">
-                  <FooterVisualizer />
-                  <div className="text-[7px] font-display font-bold tracking-[0.4em] text-[#222222] group-hover:text-tertiary-container/30 transition-colors uppercase">Stream_Active</div>
-                </div>
-
-                {/* Right: Socials */}
-                <div className="flex flex-col gap-3 items-center md:items-end">
-                  <div className="flex gap-8 text-[10px] font-display font-black tracking-[0.1em] uppercase">
-                    <a href="#" className="text-white/40 hover:text-white transition-all">GIT</a>
-                    <a href="#" className="text-white/40 hover:text-white transition-all">LNK</a>
-                    <a href="#" className="text-white/40 hover:text-white transition-all">X_SO</a>
-                  </div>
-                  <div className="text-[8px] font-body tracking-[0.4em] text-[#222222] uppercase">
-                    ©2026_ANRCHY
-                  </div>
-                </div>
+                </AnimatePresence>
               </div>
-            </footer>
-          </main>
+            </main>
+          )}
 
         </div>
       </div>
@@ -1004,7 +1041,7 @@ function App() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -60, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-[#0d0d0d] border border-tertiary-container/60 px-8 py-3 flex items-center gap-4"
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[200] bg-[#000000] border border-tertiary-container/60 px-8 py-3 flex items-center gap-4"
           >
             <motion.div
               className="w-2 h-2 bg-green-500 rounded-full"

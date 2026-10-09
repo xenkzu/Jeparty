@@ -196,8 +196,9 @@ export const AudioPlayer = ({ previewUrl, isLoading }: AudioPlayerProps) => {
                       style={{
                         height,
                         backgroundColor: isActive
-                          ? `rgba(254, 0, 0, ${0.4 + val * 0.6})`
+                          ? 'var(--color-tertiary-container)'
                           : 'rgba(255,255,255,0.12)',
+                        opacity: isActive ? 0.4 + val * 0.6 : 1,
                       }}
                       transition={{ duration: 0.05 }}
                     />
@@ -211,7 +212,7 @@ export const AudioPlayer = ({ previewUrl, isLoading }: AudioPlayerProps) => {
         {/* Progress bar */}
         <div className="relative w-full h-px bg-white/10">
           <motion.div
-            className="absolute left-0 top-0 h-full bg-tertiary-container shadow-[0_0_10px_rgba(254,0,0,0.5)]"
+            className="absolute left-0 top-0 h-full bg-tertiary-container shadow-[0_0_10px_var(--color-tertiary-container)]"
             style={{ width: `${progressPct}%` }}
           />
         </div>
