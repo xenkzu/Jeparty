@@ -146,7 +146,7 @@ function App() {
             ...Array(4).fill({ category: 'DATA', questions: [{ value: 100, question: '?', answer: '!', status: 'hidden' }] })
           ],
           scoringMode: 'normal',
-          settings: { difficulty: 'medium', timeLimit: 60, questionsPerCategory: 5, scoringMode: 'normal', uiVersion: 'v2' },
+          settings: { difficulty: 'medium', timeLimit: 60, questionsPerCategory: 5, scoringMode: 'normal', uiVersion: 'v3' },
           turnIndex: 0,
           currentQuestion: screen === 'question' ? { categoryIndex: 0, questionIndex: 0 } : null,
           skipChain: null
@@ -952,9 +952,9 @@ function App() {
                   <motion.div variants={{ hidden: { opacity: 0, y: 5 }, visible: { opacity: 1, y: 0 } }} className="flex flex-col gap-3">
                     <span className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-[#666666]">UI Version</span>
                     <div className="flex gap-3 flex-wrap">
-                      <OptionButton groupId="ui" label="V1_CLASSIC" sub="Cyberpunk" selected={pendingSettings.uiVersion === 'v1'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v1' }))} />
-                      <OptionButton groupId="ui" label="V2_MODERN" sub="Aesthetic" selected={pendingSettings.uiVersion === 'v2'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v2' }))} />
-                      <OptionButton groupId="ui" label="V3_ULTRA" sub="Next Gen" selected={pendingSettings.uiVersion === 'v3'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v3' }))} />
+                      <OptionButton groupId="ui" label="V1_CLASSIC" sub="Retro" selected={pendingSettings.uiVersion === 'v1'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v1' }))} />
+                      <OptionButton groupId="ui" label="V2_MODERN" sub="Minimal" selected={pendingSettings.uiVersion === 'v2'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v2' }))} />
+                      <OptionButton groupId="ui" label="V3_CYBERPUNK" sub="Edgerunners" selected={pendingSettings.uiVersion === 'v3'} onClick={() => setPendingSettings(s => ({ ...s, uiVersion: 'v3' }))} />
                     </div>
                   </motion.div>
                 </div>
@@ -1065,7 +1065,7 @@ function App() {
     </AnimatePresence>
 
     {/* Persistent Bottom-Right Hovering Ambient Music Player */}
-    <CyberpunkFloatingPlayer />
+    <CyberpunkFloatingPlayer disabled={(showPreloader && settings.uiVersion === 'v3') || (isLoading && settings.uiVersion === 'v3')} />
     </>
   );
 }

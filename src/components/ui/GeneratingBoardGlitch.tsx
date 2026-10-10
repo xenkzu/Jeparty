@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { PowerGlitch } from 'powerglitch';
+import { playLoopingGlitchIntro, GLITCH_SFX_VOLUME } from '../../utils/audioPreloader';
 
 interface GeneratingBoardGlitchProps {
   categories?: string[];
@@ -14,61 +15,116 @@ export const GeneratingBoardGlitch: React.FC<GeneratingBoardGlitchProps> = ({
 }) => {
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
+  const glitchRef = useRef<any>(null);
+  const stopAudioRef = useRef<(() => void) | null>(null);
+  const loopIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const burstTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  // PowerGlitch instance with subtle, randomized burst intervals
+  const clearBursts = () => {
+    burstTimeoutsRef.current.forEach(t => clearTimeout(t));
+    burstTimeoutsRef.current = [];
+  };
+
+  // PowerGlitch instance initialization
   useEffect(() => {
     if (!imgRef.current) return;
 
-    const glitch = PowerGlitch.glitch(imgRef.current, {
-      playMode: 'manual',
-      createContainers: true,
-      hideOverflow: false,
-      timing: {
-        duration: 350,
-        iterations: 1,
-      },
-      glitchTimeSpan: {
-        start: 0,
-        end: 1,
-      },
-      shake: {
-        velocity: 12,
-        amplitudeX: 0.03,
-        amplitudeY: 0, // strict horizontal jitter
-      },
-      slice: {
-        count: 5,
-        velocity: 14,
-        minHeight: 0.02,
-        maxHeight: 0.12,
-        hueRotate: true,
-      },
-      pulse: false,
-    });
+    try {
+      const glitch = PowerGlitch.glitch(imgRef.current, {
+        playMode: 'manual',
+        createContainers: true,
+        hideOverflow: false,
+        timing: {
+          duration: 250,
+          iterations: 1,
+        },
+        glitchTimeSpan: {
+          start: 0,
+          end: 1,
+        },
+        shake: {
+          velocity: 12,
+          amplitudeX: 0.03,
+          amplitudeY: 0,
+        },
+        slice: {
+          count: 5,
+          velocity: 14,
+          minHeight: 0.02,
+          maxHeight: 0.12,
+          hueRotate: true,
+        },
+        pulse: false,
+      });
 
-    let timeoutId: ReturnType<typeof setTimeout>;
-    let stopTimeoutId: ReturnType<typeof setTimeout>;
-
-    const scheduleNextGlitch = () => {
-      // Random gap between 1.4s and 3.6s
-      const delay = Math.random() * 2200 + 1400;
-      timeoutId = setTimeout(() => {
-        glitch.startGlitch();
-        // Short subtle burst duration: 120ms to 240ms
-        const burstDuration = Math.random() * 120 + 120;
-        stopTimeoutId = setTimeout(() => {
-          glitch.stopGlitch();
-          scheduleNextGlitch();
-        }, burstDuration);
-      }, delay);
-    };
-
-    scheduleNextGlitch();
+      glitchRef.current = glitch;
+    } catch (err) {
+      console.warn('[GeneratingBoardGlitch] PowerGlitch init error:', err);
+    }
 
     return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(stopTimeoutId);
-      glitch.stopGlitch?.();
+      glitchRef.current?.stopGlitch?.();
+    };
+  }, []);
+
+  // Play looping glitch sound at 20% volume, synchronized with visual glitch bursts
+  useEffect(() => {
+    let isCancelled = false;
+
+    const triggerGlitchBursts = () => {
+      const glitch = glitchRef.current;
+      if (!glitch) return;
+
+      // Burst 1: 0ms -> 140ms (matches audio spike 1)
+      glitch.startGlitch?.();
+      const t0 = setTimeout(() => {
+        glitch.stopGlitch?.();
+      }, 140);
+
+      // Burst 2: 380ms -> 680ms (matches audio spike 2)
+      const t1 = setTimeout(() => {
+        glitch.startGlitch?.();
+        const tSub = setTimeout(() => {
+          glitch.stopGlitch?.();
+        }, 300);
+        burstTimeoutsRef.current.push(tSub);
+      }, 380);
+
+      burstTimeoutsRef.current.push(t0, t1);
+    };
+
+    // Start looping audio at comfortable, subtle volume
+    playLoopingGlitchIntro(GLITCH_SFX_VOLUME).then(({ stop, duration: audioDuration }) => {
+      if (isCancelled) {
+        stop();
+        return;
+      }
+
+      stopAudioRef.current = stop;
+
+      // Initial visual burst in sync with audio start
+      triggerGlitchBursts();
+
+      // Repeat visual bursts in lockstep with each audio loop cycle (~1.25s)
+      const cycleMs = Math.round((audioDuration || 1.25) * 1000);
+      loopIntervalRef.current = setInterval(() => {
+        clearBursts();
+        triggerGlitchBursts();
+      }, cycleMs);
+    });
+
+    return () => {
+      isCancelled = true;
+      if (stopAudioRef.current) {
+        stopAudioRef.current();
+        stopAudioRef.current = null;
+      }
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
+      clearBursts();
+      glitchRef.current?.stopGlitch?.();
     };
   }, []);
 
@@ -84,7 +140,7 @@ export const GeneratingBoardGlitch: React.FC<GeneratingBoardGlitchProps> = ({
   const currentCat = categories[activeCategoryIndex] || 'NEURAL_STREAMS';
 
   return (
-    <div className="flex-1 w-full h-full min-h-[500px] flex flex-col items-center justify-center relative bg-[#000000] p-6 select-none overflow-hidden">
+    <div className="fixed inset-0 z-[9999] w-screen h-screen flex flex-col items-center justify-center bg-[#000000] p-6 select-none overflow-hidden">
       
       {/* Background Architectural Yellow Grid */}
       <div 
@@ -99,9 +155,9 @@ export const GeneratingBoardGlitch: React.FC<GeneratingBoardGlitchProps> = ({
       />
 
       {/* Ambient Yellow Glow */}
-      <div className="absolute w-[50vw] h-[50vw] bg-[#fcee0a]/[0.025] rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute w-[50vw] h-[50vw] bg-[#fcee0a]/[0.035] rounded-full blur-[140px] pointer-events-none" />
 
-      {/* Main Glitch Image Container */}
+      {/* Main Glitch Image Container - Perfectly Centered in Viewport */}
       <div className="relative w-full max-w-[620px] aspect-[16/9] flex items-center justify-center z-20 px-4">
         <img
           ref={imgRef}

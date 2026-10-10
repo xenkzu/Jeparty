@@ -11,6 +11,7 @@ const BAR_COUNT = 40;
 export const AudioPlayer = ({ previewUrl, isLoading }: AudioPlayerProps) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const mediaSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const animFrameRef = useRef<number>(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
 
@@ -39,43 +40,57 @@ export const AudioPlayer = ({ previewUrl, isLoading }: AudioPlayerProps) => {
 
   // Real analyser animation when playing
   const startAnalyser = (audio: HTMLAudioElement) => {
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    try {
+      if (!audioCtxRef.current) {
+        audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+
+      if (!analyserRef.current) {
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 128;
+        analyserRef.current = analyser;
+
+        if (!mediaSourceRef.current) {
+          const source = ctx.createMediaElementSource(audio);
+          mediaSourceRef.current = source;
+          source.connect(analyser);
+          analyser.connect(ctx.destination);
+        }
+      }
+
+      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
+
+      const draw = () => {
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const newBars = Array.from({ length: BAR_COUNT }, (_, i) => {
+          const index = Math.floor(i * dataArray.length / BAR_COUNT);
+          return dataArray[index] / 255;
+        });
+        setBars(newBars);
+        animFrameRef.current = requestAnimationFrame(draw);
+      };
+      draw();
+    } catch (err) {
+      console.warn('[AudioPlayer] Audio visualizer setup note:', err);
     }
-    const ctx = audioCtxRef.current;
-    if (ctx.state === 'suspended') ctx.resume();
-    
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 128;
-    analyserRef.current = analyser;
-
-    const source = ctx.createMediaElementSource(audio);
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
-
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    const draw = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const newBars = Array.from({ length: BAR_COUNT }, (_, i) => {
-        const index = Math.floor(i * dataArray.length / BAR_COUNT);
-        return dataArray[index] / 255;
-      });
-      setBars(newBars);
-      animFrameRef.current = requestAnimationFrame(draw);
-    };
-    draw();
   };
 
   const handlePlay = () => {
     if (!previewUrl || !audioRef.current) return;
     if (audioCtxRef.current?.state === 'suspended') {
-      audioCtxRef.current.resume();
+      audioCtxRef.current.resume().catch(() => {});
     }
     if (!analyserRef.current) {
       startAnalyser(audioRef.current);
     }
-    audioRef.current.play();
+    audioRef.current.play().catch(err => {
+      console.warn('[AudioPlayer] Audio playback note:', err);
+    });
     setPlaying(true);
     setHasPlayed(true);
   };

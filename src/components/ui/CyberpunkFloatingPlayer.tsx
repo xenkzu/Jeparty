@@ -9,6 +9,10 @@ interface TrackMetadata {
   audioUrl: string;
 }
 
+interface CyberpunkFloatingPlayerProps {
+  disabled?: boolean;
+}
+
 const DEFAULT_METADATA: TrackMetadata = {
   title: 'I Really Want to Stay at Your House',
   artist: 'Rosa Walton & Hallie Coggins',
@@ -17,7 +21,9 @@ const DEFAULT_METADATA: TrackMetadata = {
   audioUrl: '/i-really-want-to-stay-at-your-house.mp3',
 };
 
-export const CyberpunkFloatingPlayer: React.FC = () => {
+export const CyberpunkFloatingPlayer: React.FC<CyberpunkFloatingPlayerProps> = ({
+  disabled = false,
+}) => {
   const [metadata] = useState<TrackMetadata>(DEFAULT_METADATA);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLooping, setIsLooping] = useState(true);
@@ -43,22 +49,34 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
     }
   }, [volume, isMuted, isLooping]);
 
-  // Auto-play attempt on mount with one-time first interaction unlock
+  // Pause audio immediately if player becomes disabled (e.g. during preloader)
   useEffect(() => {
+    if (disabled && audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [disabled]);
+
+  // Auto-play attempt once enabled (with fallback gesture listener)
+  useEffect(() => {
+    if (disabled) return;
+
     const audio = audioRef.current;
     if (!audio) return;
 
     audio.volume = isMuted ? 0 : volume;
     audio.loop = isLooping;
 
-    // Attempt initial autoplay
-    audio.play()
-      .then(() => {
-        setIsPlaying(true);
-      })
-      .catch(() => {
-        // Autoplay restricted on cold page load
-      });
+    // Only attempt playback if user has not explicitly paused
+    if (!userPausedRef.current) {
+      audio.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch(() => {
+          // Autoplay restricted on cold page load
+        });
+    }
 
     // One-time fallback: start audio on first user gesture anywhere outside the player
     const handleFirstGesture = (e: Event) => {
@@ -85,7 +103,7 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
       window.removeEventListener('pointerdown', handleFirstGesture);
       window.removeEventListener('keydown', handleFirstGesture);
     };
-  }, []);
+  }, [disabled, isMuted, volume, isLooping]);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -157,7 +175,7 @@ export const CyberpunkFloatingPlayer: React.FC = () => {
       <audio
         ref={audioRef}
         src={metadata.audioUrl}
-        preload="auto"
+        preload="metadata"
         playsInline
         loop={isLooping}
         onLoadedMetadata={() => {

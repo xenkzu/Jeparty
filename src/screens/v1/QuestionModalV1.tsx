@@ -15,6 +15,8 @@ interface QuestionModalProps {
     status: string; 
     searchTerm?: string;
     searchTermAudio?: string;
+    source?: string | null;
+    popularityRank?: number | null;
   };
   categoryName: string;
   activePlayer: { name: string; score: number };

@@ -60,6 +60,8 @@ export interface BoardCategory {
     status: 'hidden' | 'revealed' | 'answered';
     searchTerm?: string;
     searchTermAudio?: string;
+    source?: string | null;
+    popularityRank?: number | null;
   }[];
 }
 

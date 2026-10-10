@@ -14,6 +14,8 @@ interface QuestionModalProps {
     status: string;
     searchTerm?: string;
     searchTermAudio?: string;
+    source?: string | null;
+    popularityRank?: number | null;
   };
   categoryName: string;
   activePlayer: { name: string; score: number };
@@ -146,12 +148,12 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
               {/* HUD Timer */}
               {timeLimit > 0 && !revealed && (
                 <div className="flex items-center gap-4 min-w-[120px]">
-                  <span className="font-mono text-sm text-[#eb0000] font-black tabular-nums">
+                  <span className="font-mono text-sm text-[#00f0ff] font-black tabular-nums">
                     {String(timeLeft).padStart(2, '0')}S
                   </span>
                   <div className="h-0.5 w-24 bg-white/10 relative">
                     <motion.div 
-                      className="absolute inset-y-0 left-0 bg-[#eb0000]"
+                      className="absolute inset-y-0 left-0 bg-[#00f0ff] shadow-[0_0_8px_#00f0ff]"
                       initial={{ width: '100%' }}
                       animate={{ width: `${(timeLeft / timeLimit) * 100}%` }}
                       transition={{ duration: 1, ease: "linear" }}
@@ -168,7 +170,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
               <div className="w-px h-4 bg-white/20"></div>
               <button 
                 onClick={onForceReveal}
-                className="text-white font-mono text-[10px] uppercase tracking-[0.2em] font-black hover:text-[#eb0000] transition-all flex items-center gap-2 group"
+                className="text-white font-mono text-[10px] uppercase tracking-[0.2em] font-black hover:text-[#fcee0a] transition-all flex items-center gap-2 group"
               >
                 <span className="material-symbols-outlined text-sm group-hover:rotate-90 transition-transform">visibility</span>
                 FORCE REVEAL
@@ -176,7 +178,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
               <div className="w-px h-4 bg-white/20"></div>
               <button 
                 onClick={onClose}
-                className="text-white font-mono text-[10px] uppercase tracking-[0.2em] font-black hover:text-[#eb0000] transition-all flex items-center gap-2 group"
+                className="text-white font-mono text-[10px] uppercase tracking-[0.2em] font-black hover:text-[#fcee0a] transition-all flex items-center gap-2 group"
               >
                 <span className="material-symbols-outlined text-sm group-hover:rotate-90 transition-transform">close</span>
                 CLOSE
@@ -207,7 +209,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                     className="font-turret font-extrabold text-3xl md:text-6xl leading-[1.15] text-white uppercase tracking-tight"
                   >
                     {question.question.split(' ').map((word, i, arr) => (
-                      <span key={i} className={i === arr.length - 1 ? 'text-[#eb0000]' : 'text-white'}>
+                      <span key={i} className={i === arr.length - 1 ? 'text-[#fcee0a]' : 'text-white'}>
                         {word}{' '}
                       </span>
                     ))}
@@ -222,7 +224,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                           initial={{ clipPath: 'polygon(100% 0, 100% 0, 100% 0, 100% 0)' }}
                           animate={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
                           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                          className="w-full border-4 border-[#eb0000]/20 bg-black/40 overflow-hidden"
+                          className="w-full border-2 border-[#fcee0a]/30 bg-black/40 overflow-hidden"
                         >
                           {imageLoading ? (
                             <div className="aspect-video w-full flex items-center justify-center bg-white/5 animate-pulse text-[#ababab] font-mono text-xs tracking-widest">FETCHING_INTEL...</div>
@@ -233,7 +235,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                         {!revealed && !imageLoading && (
                           <button 
                             onClick={() => setRefreshKey(prev => prev + 1)}
-                            className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#eb0000] text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+                            className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#fcee0a] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
                           >
                             <span className="material-symbols-outlined text-sm">refresh</span>
                           </button>
@@ -241,11 +243,11 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                       </div>
                     )}
                     {(audioUrl || audioLoading) && (
-                      <div className="w-full md:w-1/2 bg-[#141414] p-6 border-l-8 border-[#eb0000] relative group">
+                      <div className="w-full md:w-1/2 bg-[#141414] p-6 border-l-4 border-[#00f0ff] relative group">
                         <div className="flex flex-col gap-4">
                           <div className="flex items-center gap-4">
-                            <span className="material-symbols-outlined text-[#eb0000] animate-pulse">settings_input_antenna</span>
-                            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#ababab]">INCOMING_SIGNAL_ACQUIRED</p>
+                            <span className="material-symbols-outlined text-[#00f0ff] animate-pulse">settings_input_antenna</span>
+                            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#00f0ff]">INCOMING_SIGNAL_ACQUIRED</p>
                           </div>
                           
                           {audioLoading ? (
@@ -257,7 +259,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                         {!revealed && !audioLoading && onRefreshAudio && (
                           <button 
                             onClick={onRefreshAudio}
-                            className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#eb0000] text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+                            className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#00f0ff] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
                           >
                             <span className="material-symbols-outlined text-sm">cached</span>
                           </button>
@@ -272,14 +274,14 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                     <div className="flex flex-wrap gap-6 w-full justify-start">
                       <button
                         onClick={handleReveal}
-                        className="bg-[#eb0000] text-black px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all shadow-[6px_6px_0px_0px_white] hover:shadow-[8px_8px_0px_0px_rgba(235,0,0,0.5)]"
+                        className="bg-[#fcee0a] text-black px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all shadow-[6px_6px_0px_0px_white] hover:shadow-[8px_8px_0px_0px_rgba(252,238,10,0.6)] hover:bg-[#fff238]"
                         style={STYLES.shardBg}
                       >
                         REVEAL ANSWER
                       </button>
                       <button
                         onClick={onPass}
-                        className="border-4 border-[#eb0000] text-[#eb0000] px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all hover:bg-[#eb0000] hover:text-black shadow-[6px_6px_0px_0px_rgba(235,0,0,0.2)]"
+                        className="border-2 border-[#00f0ff] text-[#00f0ff] px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all hover:bg-[#00f0ff] hover:text-black shadow-[6px_6px_0px_0px_rgba(0,240,255,0.25)]"
                         style={STYLES.shardBg}
                       >
                         SKIP
@@ -292,10 +294,10 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                         animate={{ opacity: 1, y: 0 }}
                         className="flex flex-col gap-8 w-full items-start"
                       >
-                        <div className="bg-white/5 border-l-8 border-[#eb0000] p-8 md:p-12 w-full text-left">
+                        <div className="bg-white/5 border-l-4 border-[#fcee0a] p-8 md:p-12 w-full text-left">
                           <p 
                             style={{ fontFamily: "'Kode Mono', monospace" }}
-                            className="font-turret font-black text-2xl md:text-5xl text-[#eb0000] italic tracking-wider uppercase"
+                            className="font-turret font-black text-2xl md:text-5xl text-[#fcee0a] italic tracking-wider uppercase"
                           >
                             {question.answer}
                           </p>
@@ -303,13 +305,13 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                         
                         <div className="flex flex-wrap gap-4 opacity-70 hover:opacity-100 transition-opacity justify-start font-mono">
                           <>
-                            <button onClick={onWrong} className="bg-[#262626] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#ff6e84] hover:bg-[#ff6e84] hover:text-black transition-colors">
+                            <button onClick={onWrong} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#ff0055] hover:bg-[#ff0055] hover:text-white transition-colors">
                               WRONG ({previews.wrong})
                             </button>
-                            <button onClick={onCorrect} className="bg-[#262626] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#ff8e7d] hover:bg-[#eb0000] hover:text-black transition-colors">
+                            <button onClick={onCorrect} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#fcee0a] hover:bg-[#fcee0a] hover:text-black transition-colors">
                               CORRECT ({previews.correct})
                             </button>
-                            <button onClick={onPass} className="bg-[#262626] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#757575] hover:bg-white hover:text-black transition-colors">
+                            <button onClick={onPass} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-white/40 hover:bg-white hover:text-black transition-colors">
                               {isInSkipChain ? `SKIP (0pts)` : `PASS (${previews.pass})`}
                             </button>
                           </>
@@ -326,11 +328,11 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4 px-8 md:px-16 pb-[20px] z-20 shrink-0 font-mono">
             <div className="bg-[#131313] p-4 flex justify-between items-center border border-white/5">
               <span className="font-mono text-xs text-white/40 tracking-widest uppercase">TIME REMAINING</span>
-              <span className={`font-mono font-bold text-3xl ${isUrgent ? 'text-[#ff6e84]' : 'text-[#eb0000]'}`}>
+              <span className={`font-mono font-bold text-3xl ${isUrgent ? 'text-[#ff0055]' : 'text-[#00f0ff]'}`}>
                 {timeLimit === 0 ? '∞' : revealed ? 'LOCKED' : `${timeLeft}s`}
               </span>
             </div>
-            <div className="bg-[#131313] p-4 flex justify-between items-center border-l-4 border-[#eb0000]">
+            <div className="bg-[#131313] p-4 flex justify-between items-center border-l-4 border-[#fcee0a]">
               <span className="font-mono text-xs text-white/40 tracking-widest uppercase">STAKE POOL</span>
               <span className="font-mono font-bold text-3xl text-white">§ {activePlayer.score.toLocaleString()}</span>
             </div>
