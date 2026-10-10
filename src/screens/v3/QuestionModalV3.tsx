@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { resolveImage } from '../../services/imageService';
+import { resolveQuestionImage } from '../../services/imageService';
 import { PageTransition } from '../../components/ui/PageTransition';
 import MusicArtwork from '../../components/ui/music-artwork';
 import { resolveAudioData, ResolvedAudioData } from '../../services/audioService';
@@ -57,20 +57,51 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
   const [audioLoading, setAudioLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [noOtherImages, setNoOtherImages] = useState(false);
+  const [isTmdbImage, setIsTmdbImage] = useState(false);
+
+  const loadImage = async (options?: { isReload?: boolean; failedUrl?: string }) => {
+    if (!question.searchTerm && !question.answer) return;
+    setImageLoading(true);
+    try {
+      const res = await resolveQuestionImage(
+        {
+          question: question.question,
+          searchTerm: question.searchTerm,
+          answer: question.answer,
+          source: question.source,
+        },
+        categoryName,
+        options
+      );
+      setImageUrl(res.url);
+      setNoOtherImages(res.noOtherImages);
+      setIsTmdbImage(res.isTmdb);
+    } catch (err) {
+      console.warn('[QuestionModalV3] Error resolving image:', err);
+      setImageUrl(null);
+      setNoOtherImages(true);
+    } finally {
+      setImageLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!question.searchTerm) return;
-    setImageLoading(true);
-    
-    const lowerCat = categoryName.toLowerCase();
-    const isVisualCategory = lowerCat.includes('movie') || lowerCat.includes('film') || lowerCat.includes('cinema') || lowerCat.includes('actor') || lowerCat.includes('actress');
-    
-    resolveImage(question.searchTerm, isVisualCategory, refreshKey).then(url => {
-      if (url) setImageUrl(url);
-      setImageLoading(false);
-    });
-  }, [question.searchTerm, categoryName, refreshKey]);
+    if (question.searchTerm) {
+      loadImage();
+    }
+  }, [question.searchTerm, question.question, question.answer, categoryName]);
+
+  const handleReloadImage = () => {
+    if (imageLoading || noOtherImages) return;
+    loadImage({ isReload: true });
+  };
+
+  const handleImageError = () => {
+    if (imageUrl) {
+      loadImage({ failedUrl: imageUrl });
+    }
+  };
 
   useEffect(() => {
     if (!question.searchTermAudio) return;
@@ -355,16 +386,33 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
                             {imageLoading ? (
                               <div className="aspect-video w-full flex items-center justify-center bg-white/5 animate-pulse text-[#ababab] font-mono text-xs tracking-widest">FETCHING_INTEL...</div>
                             ) : (
-                              <img src={imageUrl!} alt="Intel" className="w-full h-auto max-h-[40vh] object-contain block mx-auto" />
+                              <img
+                                src={imageUrl!}
+                                alt="Intel"
+                                onError={handleImageError}
+                                className="w-full h-auto max-h-[40vh] object-contain block mx-auto"
+                              />
                             )}
                           </motion.div>
                           {!revealed && !imageLoading && (
-                            <button 
-                              onClick={() => setRefreshKey(prev => prev + 1)}
-                              className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#fcee0a] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
-                            >
-                              <span className="material-symbols-outlined text-sm">refresh</span>
-                            </button>
+                            noOtherImages ? (
+                              <div className="absolute top-2 right-2 px-2.5 py-1 bg-black/85 text-[10px] text-white/50 font-mono tracking-wider uppercase border border-white/10 rounded pointer-events-none">
+                                No other images found
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={handleReloadImage}
+                                title="Reload next image"
+                                className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#fcee0a] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+                              >
+                                <span className="material-symbols-outlined text-sm">refresh</span>
+                              </button>
+                            )
+                          )}
+                          {isTmdbImage && (
+                            <p className="mt-2 text-[9px] font-mono tracking-wider text-white/40 uppercase">
+                              This product uses the TMDB API but is not endorsed or certified by TMDB.
+                            </p>
                           )}
                         </div>
                       </div>
@@ -441,6 +489,13 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
               <span className="font-mono text-xs text-white/40 tracking-widest uppercase">MULTIPLIER</span>
               <span className="font-mono font-bold text-3xl text-white">x{multiplier.toFixed(1)}</span>
             </div>
+          </div>
+
+          {/* TMDB Attribution Footer Text */}
+          <div className="w-full text-center pb-2 z-20 shrink-0">
+            <p className="font-mono text-[9px] text-white/30 tracking-wider uppercase">
+              This product uses the TMDB API but is not endorsed or certified by TMDB.
+            </p>
           </div>
         </main>
       </PageTransition>

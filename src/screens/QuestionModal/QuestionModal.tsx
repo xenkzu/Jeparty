@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { resolveImage } from '../../services/imageService';
+import { resolveQuestionImage } from '../../services/imageService';
 import { PageTransition } from '../../components/ui/PageTransition';
 import MusicArtwork from '../../components/ui/music-artwork';
 import { resolveAudioData, ResolvedAudioData } from '../../services/audioService';
@@ -57,23 +57,51 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
   const [audioLoading, setAudioLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [noOtherImages, setNoOtherImages] = useState(false);
+  const [isTmdbImage, setIsTmdbImage] = useState(false);
+
+  const loadImage = async (options?: { isReload?: boolean; failedUrl?: string }) => {
+    if (!question.searchTerm && !question.answer) return;
+    setImageLoading(true);
+    try {
+      const res = await resolveQuestionImage(
+        {
+          question: question.question,
+          searchTerm: question.searchTerm,
+          answer: question.answer,
+          source: question.source,
+        },
+        categoryName,
+        options
+      );
+      setImageUrl(res.url);
+      setNoOtherImages(res.noOtherImages);
+      setIsTmdbImage(res.isTmdb);
+    } catch (err) {
+      console.warn('[QuestionModal] Error resolving image:', err);
+      setImageUrl(null);
+      setNoOtherImages(true);
+    } finally {
+      setImageLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!question.searchTerm) return;
-    setImageLoading(true);
-    
-    // Auto-detect if we should filter for landscape only (e.g. for Movies/Film categories)
-    const lowerCat = categoryName.toLowerCase();
-    const isVisualCategory = lowerCat.includes('movie') || lowerCat.includes('film') || lowerCat.includes('cinema') || lowerCat.includes('actor') || lowerCat.includes('actress');
-    
-    // We add a random param in dev to force service to find next result if possible, or use a key
-    // Pass refreshKey as retryOffset to cycle through results
-    resolveImage(question.searchTerm, isVisualCategory, refreshKey).then(url => {
-      if (url) setImageUrl(url);
-      setImageLoading(false);
-    });
-  }, [question.searchTerm, categoryName, refreshKey]);
+    if (question.searchTerm) {
+      loadImage();
+    }
+  }, [question.searchTerm, question.question, question.answer, categoryName]);
+
+  const handleReloadImage = () => {
+    if (imageLoading || noOtherImages) return;
+    loadImage({ isReload: true });
+  };
+
+  const handleImageError = () => {
+    if (imageUrl) {
+      loadImage({ failedUrl: imageUrl });
+    }
+  };
 
   useEffect(() => {
     if (!question.searchTermAudio) return;
@@ -344,16 +372,33 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
                             {imageLoading ? (
                               <div className="aspect-video w-full flex items-center justify-center bg-white/5 animate-pulse text-[#ababab] font-display text-xs tracking-widest">FETCHING_INTEL...</div>
                             ) : (
-                              <img src={imageUrl!} alt="Intel" className="w-full h-auto max-h-[40vh] object-contain block mx-auto" />
+                              <img
+                                src={imageUrl!}
+                                alt="Intel"
+                                onError={handleImageError}
+                                className="w-full h-auto max-h-[40vh] object-contain block mx-auto"
+                              />
                             )}
                           </motion.div>
                           {!revealed && !imageLoading && (
-                            <button 
-                              onClick={() => setRefreshKey(prev => prev + 1)}
-                              className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[var(--color-primary-dim)] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
-                            >
-                              <span className="material-symbols-outlined text-sm">refresh</span>
-                            </button>
+                            noOtherImages ? (
+                              <div className="absolute top-2 right-2 px-2.5 py-1 bg-black/85 text-[10px] text-white/50 font-display tracking-wider uppercase border border-white/10 rounded pointer-events-none">
+                                No other images found
+                              </div>
+                            ) : (
+                              <button 
+                                onClick={handleReloadImage}
+                                title="Reload next image"
+                                className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[var(--color-primary-dim)] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+                              >
+                                <span className="material-symbols-outlined text-sm">refresh</span>
+                              </button>
+                            )
+                          )}
+                          {isTmdbImage && (
+                            <p className="mt-2 text-[9px] font-display tracking-wider text-white/40 uppercase">
+                              This product uses the TMDB API but is not endorsed or certified by TMDB.
+                            </p>
                           )}
                         </div>
                       </div>
@@ -427,6 +472,13 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
               <span className="font-display text-xs text-white/40 tracking-widest uppercase">MULTIPLIER</span>
               <span className="font-display text-3xl text-white">x{multiplier.toFixed(1)}</span>
             </div>
+          </div>
+
+          {/* TMDB Attribution Footer Text */}
+          <div className="w-full text-center pb-2 z-20 shrink-0">
+            <p className="font-display text-[9px] text-white/30 tracking-wider uppercase">
+              This product uses the TMDB API but is not endorsed or certified by TMDB.
+            </p>
           </div>
         </main>
       </PageTransition>

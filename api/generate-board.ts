@@ -59,20 +59,23 @@ export function levelFor(difficulty: Difficulty, index: number, count: number): 
   return Math.round(lo + ((hi - lo) * index) / (count - 1));
 }
 
-export function isLocationMode(spec: CategorySpec): boolean {
-  return spec.kind === 'visual' && /movie|film|cinema|tv|show|series/i.test(spec.name);
+export function isSceneMode(spec: CategorySpec): boolean {
+  return (
+    spec.kind === 'visual' &&
+    /\b(movie|movies|film|films|cinema|tv|show|shows|series)\b/i.test(spec.name)
+  );
 }
 
 export function subjectGuidance(spec: CategorySpec, level: number): string {
   if (spec.kind === 'visual') {
-    if (isLocationMode(spec)) {
+    if (isSceneMode(spec)) {
       if (level <= 2)
-        return 'Filming location: a world-famous, instantly recognisable setting of a massive blockbuster/franchise (e.g. Alnwick Castle).';
+        return 'Scene still: a universally famous blockbuster or TV phenomenon with an instantly distinctive look (e.g. The Matrix, Jurassic Park).';
       if (level <= 4)
-        return 'Filming location: a well-known real-world landmark closely associated with one famous movie or show (e.g. Dubrovnik for Game of Thrones).';
+        return 'Scene still: a well-known, widely seen movie or TV show recognisable to casual viewers.';
       if (level <= 6)
-        return 'Filming location: a notable real-world site featured prominently in a well-known film or TV series.';
-      return 'Filming location: a real location recognisable to dedicated fans of the film or TV series.';
+        return 'Scene still: a popular film or show recognisable to regular fans of the genre/era.';
+      return 'Scene still: an acclaimed cult or enthusiast film/show with a distinctive look; recognisable to dedicated cinephiles/fans.';
     }
     if (level <= 2) return 'Subject: the lead or icon of a hugely famous series.';
     if (level <= 4) return 'Subject: a famous main-cast character.';
@@ -273,15 +276,13 @@ VISUAL categories (the player sees a picture and names the subject)
 - When a slot lists candidates, choose exactly one of them. If none has its own Wikipedia article, choose another subject of the same fame level.
 - "popularityRank" is null. "searchTermAudio" is null.
 
-LOCATION MODE (visual categories where the category name contains movie, film, cinema, tv, show, or series)
-- The image is a real, famous filming location or iconic setting, such as Alnwick Castle or Dubrovnik.
-- The question is "Which movie or show features this location?".
-- The answer is the movie or show title (add the year only if a remake makes it ambiguous).
-- "searchTerm" is the exact English Wikipedia article title of the real location.
-- "source" is the title of the movie or show (same as answer).
-- The location must be strongly tied to one title. Reject locations with many famous productions.
-- Level scales with how famous the title and location are.
-- NEVER choose a location whose name gives the title away (e.g. never "Hogwarts").
+SCENE MODE (visual categories where the category name matches whole words movie, movies, film, films, cinema, tv, show, shows, or series)
+- The player sees a backdrop scene still from a movie or TV show and identifies the title.
+- "question" is "Which movie or show is this scene from?".
+- "answer" is the exact title (add the year only if a remake makes it ambiguous).
+- "searchTerm" is the exact title of the movie or show.
+- "source" is "YYYY movie" or "YYYY tv" (release year + type, e.g. "1999 movie", "2008 tv").
+- Difficulty scales with how famous the title is; choose titles with a distinctive, recognisable look and avoid sequels whose stills would be ambiguous.
 - "popularityRank" is null. "searchTermAudio" is null.
 
 AUDIO categories (the player hears a clip and names the song)
@@ -311,11 +312,11 @@ export function buildUserPrompt(
   feedback: string[]
 ): string {
   const blocks = specs.map((spec, ci) => {
-    const isLoc = isLocationMode(spec);
+    const isScene = isSceneMode(spec);
     const kindLabel =
       spec.kind === 'visual'
-        ? isLoc
-          ? 'VISUAL (LOCATION MODE: identify movie/show from real filming location)'
+        ? isScene
+          ? 'VISUAL (SCENE MODE: identify movie/show from scene backdrop still)'
           : 'VISUAL (guess character/subject from an image)'
         : spec.kind === 'audio'
         ? 'AUDIO (guess the song from a clip)'
@@ -351,14 +352,44 @@ ${blocks.join('\n\n')}${retry}`;
 /* -------------------------------------------------------------------------- */
 
 const QUESTION_SCHEMA_PROPERTIES = {
-  level: { type: 'integer' },
-  audience: { type: 'string' },
-  popularityRank: { type: ['integer', 'null'] },
-  question: { type: 'string' },
-  answer: { type: 'string' },
-  source: { type: ['string', 'null'] },
-  searchTerm: { type: ['string', 'null'] },
-  searchTermAudio: { type: ['string', 'null'] },
+  level: {
+    type: 'integer',
+    description: 'Assigned difficulty level 1 to 10.',
+  },
+  audience: {
+    type: 'string',
+    description: 'Who realistically knows this answer (12 words or fewer).',
+  },
+  popularityRank: {
+    type: ['integer', 'null'],
+    description:
+      'For audio questions: approximate popularity rank of the track (1 = biggest hit). Null for other categories.',
+  },
+  question: {
+    type: 'string',
+    description:
+      'The question text. For visual scene mode: "Which movie or show is this scene from?". For audio: "Guess the song.".',
+  },
+  answer: {
+    type: 'string',
+    description:
+      'The concise answer (1-4 words). For scene mode: exact movie or show title (add year only if remake makes it ambiguous).',
+  },
+  source: {
+    type: ['string', 'null'],
+    description:
+      'The origin context. For scene mode: release year and type formatted strictly as "YYYY movie" or "YYYY tv" (e.g. "1999 movie", "2008 tv").',
+  },
+  searchTerm: {
+    type: ['string', 'null'],
+    description:
+      'Visual search term. For scene mode: exact movie or show title. Null for audio/text.',
+  },
+  searchTermAudio: {
+    type: ['string', 'null'],
+    description:
+      'Audio search query formatted as "Song Title Artist". Null for visual/text.',
+  },
 };
 
 const QUESTION_SCHEMA_REQUIRED = [
@@ -510,24 +541,19 @@ export function validate(
 
       if (spec.kind === 'visual') {
         if (!searchTerm) {
-          out.hard.push(`${tag}: visual question needs a Wikipedia searchTerm.`);
+          out.hard.push(`${tag}: visual question needs a searchTerm.`);
         }
         item.searchTerm = searchTerm;
 
-        if (isLocationMode(spec)) {
-          // Server-side enforce the fixed question text for location mode
-          item.question = 'Which movie or show features this location?';
-          item.source = source || answer;
+        if (isSceneMode(spec)) {
+          // Server-side enforce the fixed question text for scene mode
+          item.question = 'Which movie or show is this scene from?';
+          item.source = source || null;
 
-          // Never choose a location whose name gives the title away
-          if (searchTerm && answer) {
-            const nTerm = norm(searchTerm);
-            const nAns = norm(answer);
-            if (nTerm.length >= 3 && nAns.length >= 3 && (nTerm.includes(nAns) || nAns.includes(nTerm))) {
-              out.soft.push(
-                `${tag}: location name "${searchTerm}" gives away the answer "${answer}". Choose an iconic filming location whose name does not contain the answer.`
-              );
-            }
+          if (!source || !/^\d{4}\s+(movie|tv)$/i.test(source)) {
+            out.soft.push(
+              `${tag}: scene mode source must be "YYYY movie" or "YYYY tv" (e.g. "1999 movie", "2008 tv"), got "${source}".`
+            );
           }
         } else {
           item.question = pick(VISUAL_PROMPTS); // enforced server-side, never leaks the subject
@@ -599,7 +625,10 @@ export const REAL_PERSON_KEYWORDS = ['actor', 'actress', 'singer', 'footballer',
 export const GROUP_SHOT_PATTERNS = ['group', 'cast', 'team', 'characters', 'collage'];
 
 // In-memory cache for lookups for the lifetime of the serverless function
-const lookupCache = new Map<string, { ok: boolean; url?: string; reason?: string }>();
+const lookupCache = new Map<
+  string,
+  { ok: boolean; url?: string; reason?: string; candidates?: TmdbImageCandidate[] }
+>();
 
 export function buildWikipediaSearchQuery(answer: string, source?: string | null): string {
   const cleanAns = answer.trim();
@@ -870,6 +899,174 @@ export async function lookupAudioClip(
   }
 }
 
+export interface TmdbImageCandidate {
+  url: string;
+  width: number;
+  height: number;
+}
+
+export function filterTmdbBackdrops(backdrops: any[]): TmdbImageCandidate[] {
+  const valid = (backdrops ?? []).filter((b: any) => {
+    if (b.iso_639_1 !== null && b.iso_639_1 !== undefined) return false;
+    const w = Number(b.width);
+    const h = Number(b.height);
+    if (!w || !h || w < 1280) return false;
+    if (!b.file_path) return false;
+    const ar = typeof b.aspect_ratio === 'number' ? b.aspect_ratio : w / h;
+    return ar >= 1.6 && ar <= 1.9;
+  });
+
+  valid.sort((a: any, b: any) => (b.vote_average || 0) - (a.vote_average || 0));
+  const top8 = valid.slice(0, 8);
+  const shuffled = shuffle(top8);
+
+  return shuffled.map((b: any) => {
+    const path = b.file_path.startsWith('/') ? b.file_path : `/${b.file_path}`;
+    return {
+      url: `https://image.tmdb.org/t/p/w1280${path}`,
+      width: b.width,
+      height: b.height,
+    };
+  });
+}
+
+export async function lookupTmdbBackdrops(
+  title: string,
+  source: string | null
+): Promise<{ ok: boolean; candidates: TmdbImageCandidate[]; reason?: string }> {
+  const apiKey = process.env.TMDB_API_KEY;
+  if (!apiKey) {
+    return { ok: false, candidates: [], reason: 'TMDB_API_KEY is not configured' };
+  }
+
+  const cacheKey = `tmdb:${norm(title)}:::${norm(source || '')}`;
+  if (lookupCache.has(cacheKey)) {
+    const cached = lookupCache.get(cacheKey)!;
+    return {
+      ok: cached.ok,
+      candidates: cached.candidates ?? (cached.url ? [{ url: cached.url, width: 1920, height: 1080 }] : []),
+      reason: cached.reason,
+    };
+  }
+
+  let year: string | undefined;
+  let type: 'movie' | 'tv' = 'movie';
+
+  if (source) {
+    const m = source.trim().match(/^(\d{4})\s+(movie|tv)$/i);
+    if (m) {
+      year = m[1];
+      type = m[2].toLowerCase() as 'movie' | 'tv';
+    } else {
+      const yMatch = source.match(/(\d{4})/);
+      if (yMatch) year = yMatch[1];
+      if (/tv|show|series/i.test(source)) type = 'tv';
+    }
+  }
+
+  const authHeaders: Record<string, string> = { Accept: 'application/json' };
+  const isBearer = apiKey.length > 40;
+  if (isBearer) {
+    authHeaders.Authorization = `Bearer ${apiKey}`;
+  }
+  const keyParam = isBearer ? '' : `&api_key=${encodeURIComponent(apiKey)}`;
+
+  const searchEndpoint = type === 'movie' ? 'search/movie' : 'search/tv';
+  const yearParam = year
+    ? type === 'movie'
+      ? `&primary_release_year=${year}`
+      : `&first_air_date_year=${year}`
+    : '';
+
+  const searchUrl = `https://api.themoviedb.org/3/${searchEndpoint}?query=${encodeURIComponent(
+    title
+  )}${yearParam}${keyParam}`;
+
+  try {
+    const res = await fetch(searchUrl, { headers: authHeaders });
+    if (!res.ok) {
+      const ret = { ok: false, candidates: [], reason: `TMDB search HTTP ${res.status}` };
+      lookupCache.set(cacheKey, ret);
+      return ret;
+    }
+    const data: any = await res.json();
+    const results: any[] = data.results ?? [];
+    if (!results.length) {
+      const ret = { ok: false, candidates: [], reason: `No TMDB ${type} result for "${title}"` };
+      lookupCache.set(cacheKey, ret);
+      return ret;
+    }
+
+    const normTitle = norm(title);
+    const target =
+      results.find((r: any) => {
+        const rTitle = norm(
+          type === 'movie'
+            ? r.title || r.original_title || ''
+            : r.name || r.original_name || ''
+        );
+        const titleMatches =
+          rTitle === normTitle || rTitle.includes(normTitle) || normTitle.includes(rTitle);
+        if (!titleMatches) return false;
+        if (!year) return true;
+        const rDate = type === 'movie' ? r.release_date : r.first_air_date;
+        return typeof rDate === 'string' && rDate.startsWith(year);
+      }) ||
+      (year
+        ? undefined
+        : results.find((r: any) => {
+            const rTitle = norm(
+              type === 'movie'
+                ? r.title || r.original_title || ''
+                : r.name || r.original_name || ''
+            );
+            return (
+              rTitle === normTitle || rTitle.includes(normTitle) || normTitle.includes(rTitle)
+            );
+          }));
+
+    if (!target) {
+      const ret = {
+        ok: false,
+        candidates: [],
+        reason: `No TMDB ${type} result with matching title and year for "${title}"`,
+      };
+      lookupCache.set(cacheKey, ret);
+      return ret;
+    }
+
+    const targetId = target?.id;
+    if (!targetId) {
+      const ret = { ok: false, candidates: [], reason: `Could not identify TMDB ID for "${title}"` };
+      lookupCache.set(cacheKey, ret);
+      return ret;
+    }
+
+    const imagesUrl = `https://api.themoviedb.org/3/${type}/${targetId}/images?include_image_language=null${keyParam}`;
+    const imgRes = await fetch(imagesUrl, { headers: authHeaders });
+    if (!imgRes.ok) {
+      const ret = { ok: false, candidates: [], reason: `TMDB images HTTP ${imgRes.status}` };
+      lookupCache.set(cacheKey, ret);
+      return ret;
+    }
+    const imgData: any = await imgRes.json();
+    const candidates = filterTmdbBackdrops(imgData.backdrops ?? []);
+
+    if (candidates.length < 1) {
+      const ret = { ok: false, candidates: [], reason: `Fewer than 1 usable backdrops for "${title}"` };
+      lookupCache.set(cacheKey, ret);
+      return ret;
+    }
+
+    lookupCache.set(cacheKey, { ok: true, url: candidates[0].url, candidates });
+    return { ok: true, candidates };
+  } catch (err: any) {
+    const ret = { ok: false, candidates: [], reason: err?.message || 'TMDB fetch error' };
+    lookupCache.set(cacheKey, ret);
+    return ret;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Groq API Call & Single Slot Replacement                                    */
 /* -------------------------------------------------------------------------- */
@@ -988,9 +1185,13 @@ Output a JSON object with property "slot".`;
         }
       } else if (spec.kind === 'visual') {
         item.searchTerm = searchTerm;
-        if (isLocationMode(spec)) {
-          item.question = 'Which movie or show features this location?';
-          item.source = source || answer;
+        if (isSceneMode(spec)) {
+          item.question = 'Which movie or show is this scene from?';
+          const tmdbCheck = await lookupTmdbBackdrops(searchTerm, source);
+          if (!tmdbCheck.ok || tmdbCheck.candidates.length < 1) {
+            failedAnswers.push(answer);
+            continue;
+          }
         } else {
           item.question = pick(VISUAL_PROMPTS);
           if (/anime|manga/i.test(spec.key)) {
@@ -1158,21 +1359,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             }
           }
         } else if (spec.kind === 'visual') {
-          if (!isLocationMode(spec)) {
-            if (/anime|manga/i.test(spec.key)) {
-              const check = await lookupAnimeCharacterImage(q.answer, q.source || null);
-              if (!check.ok) {
-                console.warn(`[Handler] Anime image check failed for "${q.answer}". Requesting replacement.`);
-                const replaced = await replaceSingleSlot(apiKey, spec, slot, bannedList, check.reason || 'Image lookup failed');
-                if (replaced) cat.questions[qi] = replaced;
-              }
-            } else {
-              const check = await lookupWikipediaCharacterImage(q.answer, q.source || null);
-              if (!check.ok) {
-                console.warn(`[Handler] Game/Character image check failed for "${q.answer}". Requesting replacement.`);
-                const replaced = await replaceSingleSlot(apiKey, spec, slot, bannedList, check.reason || 'Image lookup failed');
-                if (replaced) cat.questions[qi] = replaced;
-              }
+          if (isSceneMode(spec)) {
+            const check = await lookupTmdbBackdrops(q.searchTerm || q.answer, q.source || null);
+            if (!check.ok || check.candidates.length < 1) {
+              console.warn(`[Handler] TMDB backdrop check failed for "${q.answer}": ${check.reason}. Requesting replacement.`);
+              const replaced = await replaceSingleSlot(apiKey, spec, slot, bannedList, check.reason || 'No TMDB backdrops found');
+              if (replaced) cat.questions[qi] = replaced;
+            }
+          } else if (/anime|manga/i.test(spec.key)) {
+            const check = await lookupAnimeCharacterImage(q.answer, q.source || null);
+            if (!check.ok) {
+              console.warn(`[Handler] Anime image check failed for "${q.answer}". Requesting replacement.`);
+              const replaced = await replaceSingleSlot(apiKey, spec, slot, bannedList, check.reason || 'Image lookup failed');
+              if (replaced) cat.questions[qi] = replaced;
+            }
+          } else {
+            const check = await lookupWikipediaCharacterImage(q.answer, q.source || null);
+            if (!check.ok) {
+              console.warn(`[Handler] Game/Character image check failed for "${q.answer}". Requesting replacement.`);
+              const replaced = await replaceSingleSlot(apiKey, spec, slot, bannedList, check.reason || 'Image lookup failed');
+              if (replaced) cat.questions[qi] = replaced;
             }
           }
         }

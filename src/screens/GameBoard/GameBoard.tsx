@@ -165,6 +165,9 @@ const GameBoard: React.FC<GameBoardProps> = ({ game, onSelectQuestion, onEndGame
             >
               ACTIVE_PLAYER: {activePlayer.name.toUpperCase()}
             </div>
+            <span className="hidden lg:inline text-[8px] text-white/30 font-display tracking-wider uppercase ml-4">
+              This product uses the TMDB API but is not endorsed or certified by TMDB.
+            </span>
           </div>
           <div className="flex items-center gap-4 shrink-0 ml-4">
             <button
