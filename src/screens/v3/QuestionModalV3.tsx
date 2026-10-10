@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resolveImage } from '../../services/imageService';
 import { PageTransition } from '../../components/ui/PageTransition';
-import { AudioPlayer } from '../../components/ui/AudioPlayer';
-import { resolveAudio } from '../../services/audioService';
+import MusicArtwork from '../../components/ui/music-artwork';
+import { resolveAudioData, ResolvedAudioData } from '../../services/audioService';
 import { cleanCategoryName } from '../../utils/gameUtils';
 
 interface QuestionModalProps {
@@ -53,6 +53,7 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
   const [imageLoading, setImageLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(timeLimit);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioData, setAudioData] = useState<ResolvedAudioData | null>(null);
   const [audioLoading, setAudioLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -74,8 +75,9 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
   useEffect(() => {
     if (!question.searchTermAudio) return;
     setAudioLoading(true);
-    resolveAudio(question.searchTermAudio).then(url => {
-      setAudioUrl(url);
+    resolveAudioData(question.searchTermAudio).then(data => {
+      setAudioData(data);
+      setAudioUrl(data.previewUrl);
       setAudioLoading(false);
     });
   }, [question.searchTermAudio]);
@@ -192,134 +194,233 @@ const QuestionModalV3: React.FC<QuestionModalProps> = ({
               <div className="absolute inset-0 bg-[#1f1f1f] -z-10 transform group-hover:scale-[1.005] transition-transform duration-150" style={STYLES.jaggedBorder}></div>
 
               <div className="p-6 md:p-10 flex flex-col gap-8">
-                <div className="space-y-4 text-left">
-                  {isInSkipChain && (
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="flex items-center gap-4 mb-4 px-4 py-3 border-l-4 border-yellow-500 bg-yellow-500/5"
-                    >
-                      <span className="font-mono text-[10px] tracking-widest text-yellow-400 uppercase">
-                        ⚡ SKIP CHAIN ACTIVE — Original: {skipChainOriginalPlayer} — Correct: +50% · Wrong: -50% · Skip: 0pts
-                      </span>
-                    </motion.div>
-                  )}
-                  <h1 
-                    style={{ fontFamily: "'Kode Mono', monospace" }}
-                    className="font-turret font-extrabold text-3xl md:text-6xl leading-[1.15] text-white uppercase tracking-tight"
-                  >
-                    {question.question.split(' ').map((word, i, arr) => (
-                      <span key={i} className={i === arr.length - 1 ? 'text-[#fcee0a]' : 'text-white'}>
-                        {word}{' '}
-                      </span>
-                    ))}
-                  </h1>
-                </div>
-
-                {(imageUrl || imageLoading || audioUrl || audioLoading) && (
-                  <div className="flex flex-col md:flex-row gap-8 items-start justify-start">
-                    {(imageUrl || imageLoading) && (
-                      <div className="relative group w-full md:w-2/3">
-                        <motion.div 
-                          initial={{ clipPath: 'polygon(100% 0, 100% 0, 100% 0, 100% 0)' }}
-                          animate={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
-                          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                          className="w-full border-2 border-[#fcee0a]/30 bg-black/40 overflow-hidden"
+                {question.searchTermAudio ? (
+                  /* Audio Questions: Split 2-column layout */
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center w-full">
+                    {/* Left Half: Question text, Audio player, and controls */}
+                    <div className="flex flex-col gap-6 text-left">
+                      {isInSkipChain && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-4 px-4 py-3 border-l-4 border-yellow-500 bg-yellow-500/5"
                         >
-                          {imageLoading ? (
-                            <div className="aspect-video w-full flex items-center justify-center bg-white/5 animate-pulse text-[#ababab] font-mono text-xs tracking-widest">FETCHING_INTEL...</div>
-                          ) : (
-                            <img src={imageUrl!} alt="Intel" className="w-full h-auto max-h-[40vh] object-contain block mx-auto" />
-                          )}
+                          <span className="font-mono text-[10px] tracking-widest text-yellow-400 uppercase">
+                            ⚡ SKIP CHAIN ACTIVE — Original: {skipChainOriginalPlayer} — Correct: +50% · Wrong: -50% · Skip: 0pts
+                          </span>
                         </motion.div>
-                        {!revealed && !imageLoading && (
-                          <button 
-                            onClick={() => setRefreshKey(prev => prev + 1)}
-                            className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#fcee0a] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
-                          >
-                            <span className="material-symbols-outlined text-sm">refresh</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-                    {(audioUrl || audioLoading) && (
-                      <div className="w-full md:w-1/2 bg-[#141414] p-6 border-l-4 border-[#00f0ff] relative group">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center gap-4">
-                            <span className="material-symbols-outlined text-[#00f0ff] animate-pulse">settings_input_antenna</span>
-                            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-[#00f0ff]">INCOMING_SIGNAL_ACQUIRED</p>
+                      )}
+
+                      <h1 
+                        style={{ fontFamily: "'Kode Mono', monospace" }}
+                        className="font-turret font-extrabold text-3xl md:text-5xl lg:text-6xl leading-[1.15] text-white uppercase tracking-tight"
+                      >
+                        {question.question.split(' ').map((word, i, arr) => (
+                          <span key={i} className={i === arr.length - 1 ? 'text-[#fcee0a]' : 'text-white'}>
+                            {word}{' '}
+                          </span>
+                        ))}
+                      </h1>
+
+                      {/* Audio Clue Status (Click Album Art to Play/Pause) */}
+                      <div className="w-full bg-[#141414] px-5 py-4 border-l-4 border-[#00f0ff] flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="material-symbols-outlined text-[#00f0ff] animate-pulse text-lg">
+                            {audioLoading ? 'hourglass_top' : 'album'}
+                          </span>
+                          <div>
+                            <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#00f0ff] font-bold">
+                              {audioLoading ? 'DECODING_AUDIO_SIGNAL...' : 'AUDIO_CLUE_ONLINE'}
+                            </p>
+                            <p className="font-mono text-[10px] tracking-wider text-white/50 uppercase">
+                              Click album artwork to play / pause
+                            </p>
                           </div>
-                          
-                          {audioLoading ? (
-                            <div className="h-24 w-full flex items-center justify-center bg-white/5 animate-pulse text-xs tracking-widest text-[#666] font-mono">DECODING_AUDIO...</div>
-                          ) : (
-                            <AudioPlayer previewUrl={audioUrl} isLoading={audioLoading} />
-                          )}
                         </div>
                         {!revealed && !audioLoading && onRefreshAudio && (
                           <button 
                             onClick={onRefreshAudio}
-                            className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#00f0ff] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+                            title="Reload alternative track"
+                            className="p-2 bg-black/80 hover:bg-[#00f0ff] hover:text-black text-white rounded-full transition-all duration-300 flex items-center justify-center border border-white/20"
                           >
                             <span className="material-symbols-outlined text-sm">cached</span>
                           </button>
                         )}
                       </div>
-                    )}
-                  </div>
-                )}
 
-                <div className="flex flex-col md:flex-row gap-6 items-center justify-start font-mono">
-                  {!revealed ? (
-                    <div className="flex flex-wrap gap-6 w-full justify-start">
-                      <button
-                        onClick={handleReveal}
-                        className="bg-[#fcee0a] text-black px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all shadow-[6px_6px_0px_0px_white] hover:shadow-[8px_8px_0px_0px_rgba(252,238,10,0.6)] hover:bg-[#fff238]"
-                        style={STYLES.shardBg}
-                      >
-                        REVEAL ANSWER
-                      </button>
-                      <button
-                        onClick={onPass}
-                        className="border-2 border-[#00f0ff] text-[#00f0ff] px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all hover:bg-[#00f0ff] hover:text-black shadow-[6px_6px_0px_0px_rgba(0,240,255,0.25)]"
-                        style={STYLES.shardBg}
-                      >
-                        SKIP
-                      </button>
+                      {/* Action / Reveal Buttons */}
+                      <div className="flex flex-col gap-4 font-mono mt-2">
+                        {!revealed ? (
+                          <div className="flex flex-wrap gap-4 w-full">
+                            <button
+                              onClick={handleReveal}
+                              className="bg-[#fcee0a] text-black px-10 py-5 font-mono font-black text-xl md:text-2xl uppercase tracking-tight active:scale-95 transition-all shadow-[6px_6px_0px_0px_white] hover:shadow-[8px_8px_0px_0px_rgba(252,238,10,0.6)] hover:bg-[#fff238]"
+                              style={STYLES.shardBg}
+                            >
+                              REVEAL ANSWER
+                            </button>
+                            <button
+                              onClick={onPass}
+                              className="border-2 border-[#00f0ff] text-[#00f0ff] px-10 py-5 font-mono font-black text-xl md:text-2xl uppercase tracking-tight active:scale-95 transition-all hover:bg-[#00f0ff] hover:text-black shadow-[6px_6px_0px_0px_rgba(0,240,255,0.25)]"
+                              style={STYLES.shardBg}
+                            >
+                              SKIP
+                            </button>
+                          </div>
+                        ) : (
+                          <AnimatePresence>
+                            <motion.div
+                              initial={{ opacity: 0, y: 15 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="flex flex-col gap-6 w-full items-start"
+                            >
+                              <div className="bg-white/5 border-l-4 border-[#fcee0a] p-6 md:p-8 w-full text-left">
+                                <p 
+                                  style={{ fontFamily: "'Kode Mono', monospace" }}
+                                  className="font-turret font-black text-2xl md:text-4xl text-[#fcee0a] italic tracking-wider uppercase"
+                                >
+                                  {question.answer}
+                                </p>
+                              </div>
+                              
+                              <div className="flex flex-wrap gap-3 opacity-80 hover:opacity-100 transition-opacity justify-start font-mono">
+                                <button onClick={onWrong} className="bg-[#1a1a1a] text-white px-5 py-2.5 font-mono font-bold text-xs uppercase tracking-tight border-b-4 border-[#ff0055] hover:bg-[#ff0055] hover:text-white transition-colors">
+                                  WRONG ({previews.wrong})
+                                </button>
+                                <button onClick={onCorrect} className="bg-[#1a1a1a] text-white px-5 py-2.5 font-mono font-bold text-xs uppercase tracking-tight border-b-4 border-[#fcee0a] hover:bg-[#fcee0a] hover:text-black transition-colors">
+                                  CORRECT ({previews.correct})
+                                </button>
+                                <button onClick={onPass} className="bg-[#1a1a1a] text-white px-5 py-2.5 font-mono font-bold text-xs uppercase tracking-tight border-b-4 border-white/40 hover:bg-white hover:text-black transition-colors">
+                                  {isInSkipChain ? `SKIP (0pts)` : `PASS (${previews.pass})`}
+                                </button>
+                              </div>
+                            </motion.div>
+                          </AnimatePresence>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <AnimatePresence>
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex flex-col gap-8 w-full items-start"
+
+                    {/* Right Half: MusicArtwork with spinning vinyl & album cover */}
+                    <div className="flex items-center justify-center p-4 min-h-[300px]">
+                      <MusicArtwork
+                        artist={audioData?.artist || ''}
+                        music={audioData?.trackName || ''}
+                        albumArt={
+                          audioData?.albumArt ||
+                          'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=600&auto=format&fit=crop&q=80'
+                        }
+                        audioUrl={audioUrl}
+                        isSong={true}
+                        isLoading={audioLoading}
+                        showTitle={revealed}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  /* Visual & Text Questions: Standard layout */
+                  <>
+                    <div className="space-y-4 text-left">
+                      {isInSkipChain && (
+                        <motion.div
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-4 mb-4 px-4 py-3 border-l-4 border-yellow-500 bg-yellow-500/5"
+                        >
+                          <span className="font-mono text-[10px] tracking-widest text-yellow-400 uppercase">
+                            ⚡ SKIP CHAIN ACTIVE — Original: {skipChainOriginalPlayer} — Correct: +50% · Wrong: -50% · Skip: 0pts
+                          </span>
+                        </motion.div>
+                      )}
+                      <h1 
+                        style={{ fontFamily: "'Kode Mono', monospace" }}
+                        className="font-turret font-extrabold text-3xl md:text-6xl leading-[1.15] text-white uppercase tracking-tight"
                       >
-                        <div className="bg-white/5 border-l-4 border-[#fcee0a] p-8 md:p-12 w-full text-left">
-                          <p 
-                            style={{ fontFamily: "'Kode Mono', monospace" }}
-                            className="font-turret font-black text-2xl md:text-5xl text-[#fcee0a] italic tracking-wider uppercase"
+                        {question.question.split(' ').map((word, i, arr) => (
+                          <span key={i} className={i === arr.length - 1 ? 'text-[#fcee0a]' : 'text-white'}>
+                            {word}{' '}
+                          </span>
+                        ))}
+                      </h1>
+                    </div>
+
+                    {(imageUrl || imageLoading) && (
+                      <div className="flex flex-col md:flex-row gap-8 items-start justify-start">
+                        <div className="relative group w-full md:w-2/3">
+                          <motion.div 
+                            initial={{ clipPath: 'polygon(100% 0, 100% 0, 100% 0, 100% 0)' }}
+                            animate={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}
+                            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+                            className="w-full border-2 border-[#fcee0a]/30 bg-black/40 overflow-hidden"
                           >
-                            {question.answer}
-                          </p>
+                            {imageLoading ? (
+                              <div className="aspect-video w-full flex items-center justify-center bg-white/5 animate-pulse text-[#ababab] font-mono text-xs tracking-widest">FETCHING_INTEL...</div>
+                            ) : (
+                              <img src={imageUrl!} alt="Intel" className="w-full h-auto max-h-[40vh] object-contain block mx-auto" />
+                            )}
+                          </motion.div>
+                          {!revealed && !imageLoading && (
+                            <button 
+                              onClick={() => setRefreshKey(prev => prev + 1)}
+                              className="absolute top-2 right-2 p-2 bg-black/80 hover:bg-[#fcee0a] hover:text-black text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 z-50 flex items-center justify-center border border-white/20"
+                            >
+                              <span className="material-symbols-outlined text-sm">refresh</span>
+                            </button>
+                          )}
                         </div>
-                        
-                        <div className="flex flex-wrap gap-4 opacity-70 hover:opacity-100 transition-opacity justify-start font-mono">
-                          <>
-                            <button onClick={onWrong} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#ff0055] hover:bg-[#ff0055] hover:text-white transition-colors">
-                              WRONG ({previews.wrong})
-                            </button>
-                            <button onClick={onCorrect} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#fcee0a] hover:bg-[#fcee0a] hover:text-black transition-colors">
-                              CORRECT ({previews.correct})
-                            </button>
-                            <button onClick={onPass} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-white/40 hover:bg-white hover:text-black transition-colors">
-                              {isInSkipChain ? `SKIP (0pts)` : `PASS (${previews.pass})`}
-                            </button>
-                          </>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col md:flex-row gap-6 items-center justify-start font-mono">
+                      {!revealed ? (
+                        <div className="flex flex-wrap gap-6 w-full justify-start">
+                          <button
+                            onClick={handleReveal}
+                            className="bg-[#fcee0a] text-black px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all shadow-[6px_6px_0px_0px_white] hover:shadow-[8px_8px_0px_0px_rgba(252,238,10,0.6)] hover:bg-[#fff238]"
+                            style={STYLES.shardBg}
+                          >
+                            REVEAL ANSWER
+                          </button>
+                          <button
+                            onClick={onPass}
+                            className="border-2 border-[#00f0ff] text-[#00f0ff] px-12 py-6 font-mono font-black text-2xl md:text-3xl uppercase tracking-tight active:scale-95 transition-all hover:bg-[#00f0ff] hover:text-black shadow-[6px_6px_0px_0px_rgba(0,240,255,0.25)]"
+                            style={STYLES.shardBg}
+                          >
+                            SKIP
+                          </button>
                         </div>
-                      </motion.div>
-                    </AnimatePresence>
-                  )}
-                </div>
+                      ) : (
+                        <AnimatePresence>
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-col gap-8 w-full items-start"
+                          >
+                            <div className="bg-white/5 border-l-4 border-[#fcee0a] p-8 md:p-12 w-full text-left">
+                              <p 
+                                style={{ fontFamily: "'Kode Mono', monospace" }}
+                                className="font-turret font-black text-2xl md:text-5xl text-[#fcee0a] italic tracking-wider uppercase"
+                              >
+                                {question.answer}
+                              </p>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-4 opacity-70 hover:opacity-100 transition-opacity justify-start font-mono">
+                              <button onClick={onWrong} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#ff0055] hover:bg-[#ff0055] hover:text-white transition-colors">
+                                WRONG ({previews.wrong})
+                              </button>
+                              <button onClick={onCorrect} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-[#fcee0a] hover:bg-[#fcee0a] hover:text-black transition-colors">
+                                CORRECT ({previews.correct})
+                              </button>
+                              <button onClick={onPass} className="bg-[#1a1a1a] text-white px-6 py-3 font-mono font-bold text-sm uppercase tracking-tight border-b-4 border-white/40 hover:bg-white hover:text-black transition-colors">
+                                {isInSkipChain ? `SKIP (0pts)` : `PASS (${previews.pass})`}
+                              </button>
+                            </div>
+                          </motion.div>
+                        </AnimatePresence>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </section>
