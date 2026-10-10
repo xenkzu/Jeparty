@@ -24,6 +24,7 @@ import { CyberpunkPreloader } from './components/ui/CyberpunkPreloader';
 import { GeneratingBoardGlitch } from './components/ui/GeneratingBoardGlitch';
 import { CyberViewportFrame } from './components/ui/CyberViewportFrame';
 import { CyberpunkFloatingPlayer } from './components/ui/CyberpunkFloatingPlayer';
+import { CyberpunkSettingsLogo } from './components/ui/CyberpunkSettingsLogo';
 
 const SETTINGS_STORAGE_KEY = 'jeparty_settings_v1';
 
@@ -908,7 +909,7 @@ function App() {
 
                 <motion.div variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0 } }}>
                   <h2 className="font-zalando font-black text-2xl tracking-tight text-white uppercase flex items-center gap-3">
-                    <span className="material-symbols-outlined text-tertiary-container text-2xl">settings_system_daydream</span>
+                    <CyberpunkSettingsLogo size={26} color="#F4FF00" />
                     SYSTEM_CONFIG
                   </h2>
                 </motion.div>

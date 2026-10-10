@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Screen } from '../../types/game';
 import { AntiMetalButton } from './anti-metal-button';
+import { CyberpunkSettingsLogo } from './CyberpunkSettingsLogo';
 
 interface NavbarProps {
   currentScreen: Screen;
@@ -140,15 +141,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           <button
             onClick={onOpenSettings}
-            className="p-2 text-white/60 hover:text-tertiary-container flex items-center justify-center transition-colors"
+            className="p-2 text-white/60 hover:text-tertiary-container flex items-center justify-center transition-colors group"
             title="Settings"
           >
-            <span
-              className="material-symbols-outlined text-xl"
-              style={{ fontVariationSettings: "'wght' 200, 'opsz' 24" }}
-            >
-              settings
-            </span>
+            <CyberpunkSettingsLogo size={20} spinOnHover={true} />
           </button>
 
           <AntiMetalButton
